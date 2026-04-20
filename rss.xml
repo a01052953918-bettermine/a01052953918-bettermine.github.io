@@ -1,18 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"> <channel> <title>2026 소상공인 실무 종합 계산기</title> <link>https://a01052953918-bettermine.github.io/</link> <description>2026년 최저임금 반영 부가세, 주휴수당, 배달수수료, 4대보험 무료 계산기</description> <language>ko-kr</language> <pubDate>Tue, 21 Apr 2026 00:00:00 +0900</pubDate> <lastBuildDate>Tue, 21 Apr 2026 00:00:00 +0900</lastBuildDate> <atom:link href="https://www.google.com/search?q=https://a01052953918-bettermine.github.io/rss.xml" rel="self" type="application/rss+xml" />
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+<title>2026 소상공인 실무 종합 계산기</title>
+<link>https://www.google.com/search?q=https://a01052953918-bettermine.github.io/</link>
+<description>2026년 최저임금 반영 부가세, 주휴수당, 배달수수료, 4대보험 무료 계산기</description>
+<language>ko-kr</language>
+<pubDate>Tue, 21 Apr 2026 00:00:00 +0900</pubDate>
+<lastBuildDate>Tue, 21 Apr 2026 00:00:00 +0900</lastBuildDate>
+<atom:link href="https://www.google.com/search?q=https://a01052953918-bettermine.github.io/rss.xml" rel="self" type="application/rss+xml" />
 
 <item>
-  <title>2026 소상공인 실무 종합 계산기 업데이트</title>
-  <link>https://a01052953918-bettermine.github.io/</link>
-  <description><![CDATA[
-    2026년 최저임금 10,320원 확정안을 반영한 종합 계산기입니다. 
-    부가세(일반/간이), 배달앱(배민/쿠팡/요기요) 수수료, 주휴수당, 4대보험, 손익분기점(BEP), 마진율 등을 한 번에 확인하세요.
-  ]]></description>
-  <guid isPermaLink="true">https://a01052953918-bettermine.github.io/</guid>
-  <pubDate>Tue, 21 Apr 2026 00:00:00 +0900</pubDate>
+<title>2026 소상공인 실무 종합 계산기 업데이트</title>
+<link>https://www.google.com/search?q=https://a01052953918-bettermine.github.io/</link>
+<description><![CDATA[
+2026년 최저임금 10,320원 확정안을 반영한 종합 계산기입니다.
+부가세(일반/간이), 배달앱(배민/쿠팡/요기요) 수수료, 주휴수당, 4대보험, 손익분기점(BEP), 마진율 등을 한 번에 확인하세요.
+]]></description>
+<guid isPermaLink="true">https://www.google.com/search?q=https://a01052953918-bettermine.github.io/</guid>
+<pubDate>Tue, 21 Apr 2026 00:00:00 +0900</pubDate>
 </item>
-
 
 </channel>
 </rss>
