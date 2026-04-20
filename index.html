@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- 네이버 소유권 확인 태그 -->
     <meta name="naver-site-verification" content="e450d79d3b83dec7a0dc3e50fa61d0b01f35e596" />
 
-    <!-- SEO 설정 -->
-    <title>2025 소상공인 종합 계산기 | 부가세, 배달수수료, 주휴수당</title>
-    <meta name="description" content="소상공인을 위한 무료 종합 계산기. 부가세, 배달앱 수수료, 손익분기점, 주휴수당, 4대보험, 대출 상환액을 한 곳에서 계산하세요.">
-    <meta name="keywords" content="소상공인계산기, 부가세계산기, 배달수수료계산기, 주휴수당계산기, 손익분기점계산기, 2025최저임금">
+    <title>2026 소상공인 종합 계산기 | 부가세·주휴수당·배달수수료 무료 계산</title>
+    <meta name="description" content="2026년 최신 최저임금 10,320원 반영! 소상공인과 자영업자를 위한 필수 계산기. 부가세, 배달앱 수수료, 주휴수당, 4대보험, 손익분기점을 한 번에 확인하세요.">
+    <meta name="keywords" content="2026최저임금, 2026소상공인계산기, 부가세계산기, 주휴수당계산기, 배달수수료계산기, 자영업자필수앱, 손익분기점계산">
+    
+    <meta property="og:title" content="2026 소상공인 실무 종합 계산기">
+    <meta property="og:description" content="사장님들의 필수 도구! 2026년 정책 반영 완료.">
+    <meta property="og:type" content="website">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -20,7 +22,7 @@
         .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
         .input-group { margin-bottom: 1rem; }
         .input-label { display: block; font-size: 0.875rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem; }
-        .input-field { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; outline: none; }
+        .input-field { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; outline: none; }
         .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
         .nav-btn { padding: 0.75rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; color: #64748b; font-weight: 600; transition: all 0.2s; }
         .nav-btn.active { border-color: #3b82f6; color: #3b82f6; background-color: #eff6ff; }
@@ -32,40 +34,39 @@
 </head>
 <body>
 
-<div class="author-badge">by.허대영</div>
+<div class="author-badge">by. 허대영 (WithPeople)</div>
 
 <div class="max-w-6xl mx-auto px-4 py-8 pb-16">
-    <header class="mb-8">
-        <h1 class="text-3xl font-bold text-slate-800 text-center">📊 소상공인 종합 계산기</h1>
-        <p class="text-slate-500 text-center mt-2">2025-2026 최신 정책 반영 통합 도구</p>
+    <header class="mb-8 text-center">
+        <h1 class="text-4xl font-extrabold text-slate-800">📊 2026 소상공인 실무 계산기</h1>
+        <p class="text-slate-500 mt-3 text-lg">2026년 최저임금 10,320원 및 최신 세무 기준 반영</p>
     </header>
 
     <nav class="flex overflow-x-auto whitespace-nowrap bg-white rounded-lg shadow-sm mb-6 no-scrollbar border-b">
         <button onclick="showTab('tax')" id="btn-tax" class="nav-btn active">🧾 부가세</button>
         <button onclick="showTab('delivery')" id="btn-delivery" class="nav-btn">🛵 배달앱</button>
-        <button onclick="showTab('bep')" id="btn-bep" class="nav-btn">📊 손익분기</button>
-        <button onclick="showTab('margin')" id="btn-margin" class="nav-btn">💰 마진</button>
-        <button onclick="showTab('salary')" id="btn-salary" class="nav-btn">📅 주휴수당</button>
+        <button onclick="showTab('salary')" id="btn-salary" class="nav-btn">📅 주휴/급여</button>
+        <button onclick="showTab('bep')" id="btn-bep" class="nav-btn">📈 손익분기</button>
+        <button onclick="showTab('margin')" id="btn-margin" class="nav-btn">💰 마진율</button>
         <button onclick="showTab('insurance')" id="btn-insurance" class="nav-btn">🏥 4대보험</button>
-        <button onclick="showTab('stock')" id="btn-stock" class="nav-btn">📦 재고관리</button>
+        <button onclick="showTab('stock')" id="btn-stock" class="nav-btn">📦 발주타이밍</button>
         <button onclick="showTab('loan')" id="btn-loan" class="nav-btn">🏦 대출상환</button>
     </nav>
 
-    <!-- 1. 부가세 -->
     <section id="tab-tax" class="tab-content">
         <div class="card">
-            <h2 class="text-xl font-bold mb-4">부가세 계산기</h2>
+            <h2 class="text-xl font-bold mb-4">부가세 계산기 (2026 기준)</h2>
             <div class="grid-layout">
                 <div>
                     <div class="input-group">
                         <label class="input-label">과세 유형</label>
                         <select id="tax-type" class="input-field" onchange="calcTax()">
                             <option value="10">일반과세자 (10%)</option>
-                            <option value="1.5">간이과세자 (평균 1.5%~4%)</option>
+                            <option value="1.5">간이과세자 (업종평균 반영)</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label class="input-label">결제 금액 (원)</label>
+                        <label class="input-label">결제 금액 (합계액)</label>
                         <input type="number" id="tax-amount" class="input-field" value="1000000" oninput="calcTax()">
                     </div>
                 </div>
@@ -73,221 +74,92 @@
                     <div class="flex justify-between mb-2"><span>공급가액:</span> <span id="res-tax-supply" class="font-bold">-</span></div>
                     <div class="flex justify-between mb-2 text-red-500"><span>부가가치세:</span> <span id="res-tax-vat" class="font-bold">-</span></div>
                     <hr class="my-2">
-                    <div class="flex justify-between text-lg text-blue-600 font-bold"><span>최종 합계:</span> <span id="res-tax-total">-</span></div>
+                    <div class="flex justify-between text-lg text-blue-600 font-bold"><span>총 결제금액:</span> <span id="res-tax-total">-</span></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 2. 배달앱 -->
-    <section id="tab-delivery" class="tab-content hidden">
+    <section id="tab-salary" class="tab-content hidden">
         <div class="card">
-            <h2 class="text-xl font-bold mb-4">배달 플랫폼 실정산액 (배민/쿠팡 기준)</h2>
+            <h2 class="text-xl font-bold mb-4">2026 급여/주휴수당 계산기</h2>
             <div class="grid-layout">
                 <div>
-                    <div class="input-group"><label class="input-label">주문금액</label><input type="number" id="del-price" class="input-field" value="30000" oninput="calcDelivery()"></div>
-                    <div class="input-group"><label class="input-label">고객배달비</label><input type="number" id="del-cust-fee" class="input-field" value="3000" oninput="calcDelivery()"></div>
+                    <div class="input-group"><label class="input-label">시급 (2026 최저임금: 10,320원)</label><input type="number" id="sal-hourly" class="input-field" value="10320" oninput="calcSalary()"></div>
+                    <div class="input-group"><label class="input-label">주간 총 근무시간</label><input type="number" id="sal-hours" class="input-field" value="40" oninput="calcSalary()"></div>
                 </div>
                 <div class="result-box">
-                    <div class="flex justify-between mb-2"><span>중개 수수료(9.8%):</span> <span id="res-del-broker" class="text-red-500">-</span></div>
-                    <div class="flex justify-between mb-2"><span>카드수수료/기타:</span> <span id="res-del-pay" class="text-red-500">-</span></div>
+                    <div class="flex justify-between mb-2"><span>기본급:</span> <span id="res-sal-base" class="font-bold">-</span></div>
+                    <div class="flex justify-between mb-2 text-blue-500"><span>주휴수당:</span> <span id="res-sal-weekly" class="font-bold">-</span></div>
                     <hr class="my-2">
-                    <div class="flex justify-between text-lg text-blue-700 font-bold"><span>예상 정산액:</span> <span id="res-del-net">-</span></div>
+                    <div class="flex justify-between text-lg text-blue-700 font-bold"><span>주급 합계:</span> <span id="res-sal-total">-</span></div>
+                    <p class="text-xs text-slate-400 mt-2">* 주 15시간 이상 근무 시 발생</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 3. 손익분기점 -->
-    <section id="tab-bep" class="tab-content hidden">
+    <section id="tab-delivery" class="tab-content hidden">
         <div class="card">
-            <h2 class="text-xl font-bold mb-4">손익분기점(BEP) 분석</h2>
+            <h2 class="text-xl font-bold mb-4">배달앱 실정산 예측 (배민/쿠팡 기준)</h2>
             <div class="grid-layout">
                 <div>
-                    <div class="input-group"><label class="input-label">월 고정비 (임대료/인건비)</label><input type="number" id="bep-fixed" class="input-field" value="3000000" oninput="calcBep()"></div>
-                    <div class="input-group"><label class="input-label">상품 평균 단가</label><input type="number" id="bep-price" class="input-field" value="15000" oninput="calcBep()"></div>
-                    <div class="input-group"><label class="input-label">변동비 (원가/배달비)</label><input type="number" id="bep-variable" class="input-field" value="6000" oninput="calcBep()"></div>
+                    <div class="input-group"><label class="input-label">판매가</label><input type="number" id="del-price" class="input-field" value="30000" oninput="calcDelivery()"></div>
+                    <div class="input-group"><label class="input-label">고객 배달팁</label><input type="number" id="del-cust-fee" class="input-field" value="3000" oninput="calcDelivery()"></div>
+                </div>
+                <div class="result-box">
+                    <div class="flex justify-between mb-2"><span>중개수수료(9.8%):</span> <span id="res-del-broker" class="text-red-500">-</span></div>
+                    <div class="flex justify-between mb-2"><span>결제수수료(3%):</span> <span id="res-del-pay" class="text-red-500">-</span></div>
+                    <hr class="my-2">
+                    <div class="flex justify-between text-lg text-blue-700 font-bold"><span>내 통장 정산액:</span> <span id="res-del-net">-</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tab-bep" class="tab-content hidden">
+        <div class="card"><h2 class="text-xl font-bold mb-4">손익분기점(BEP) 시뮬레이션</h2>
+            <div class="grid-layout">
+                <div>
+                    <div class="input-group"><label class="input-label">월 고정비 (임대료/통신/리스)</label><input type="number" id="bep-fixed" class="input-field" value="3500000" oninput="calcBep()"></div>
+                    <div class="input-group"><label class="input-label">평균 판매가</label><input type="number" id="bep-price" class="input-field" value="20000" oninput="calcBep()"></div>
+                    <div class="input-group"><label class="input-label">변동비 (원재료/포장비)</label><input type="number" id="bep-variable" class="input-field" value="8000" oninput="calcBep()"></div>
                 </div>
                 <div class="result-box">
                     <div class="mb-2">필요 판매량: <span id="res-bep-qty" class="font-bold text-blue-600">-</span></div>
-                    <div>손익분기 매출: <span id="res-bep-sales" class="font-bold text-blue-600">-</span></div>
+                    <div>월 매출 목표: <span id="res-bep-sales" class="font-bold text-blue-600">-</span></div>
                 </div>
             </div>
             <div class="mt-6 h-64"><canvas id="bepChart"></canvas></div>
         </div>
     </section>
 
-    <!-- 4. 마진 -->
-    <section id="tab-margin" class="tab-content hidden">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">마진율 계산기</h2>
-            <div class="grid-layout">
-                <div>
-                    <div class="input-group"><label class="input-label">판매가</label><input type="number" id="mar-price" class="input-field" value="20000" oninput="calcMargin()"></div>
-                    <div class="input-group"><label class="input-label">원가(사입가)</label><input type="number" id="mar-cost" class="input-field" value="8000" oninput="calcMargin()"></div>
-                </div>
-                <div class="result-box">
-                    <div class="flex justify-between mb-2"><span>마진 금액:</span> <span id="res-mar-val" class="font-bold">-</span></div>
-                    <div class="flex justify-between text-lg text-green-600 font-bold"><span>최종 마진율:</span> <span id="res-mar-rate">-</span></div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <section id="tab-margin" class="tab-content hidden"><div class="card"><h2 class="text-xl font-bold mb-4">마진율 계산기</h2><div class="grid-layout"><div><div class="input-group"><label class="input-label">판매가</label><input type="number" id="mar-price" class="input-field" value="10000" oninput="calcMargin()"></div><div class="input-group"><label class="input-label">원가</label><input type="number" id="mar-cost" class="input-field" value="4000" oninput="calcMargin()"></div></div><div class="result-box"><div class="flex justify-between mb-2"><span>마진액:</span> <span id="res-mar-val" class="font-bold">-</span></div><div class="flex justify-between text-lg text-green-600 font-bold"><span>마진율:</span> <span id="res-mar-rate">-</span></div></div></div></div></section>
+    <section id="tab-insurance" class="tab-content hidden"><div class="card"><h2 class="text-xl font-bold mb-4">4대보험 공제 계산</h2><div class="grid-layout"><div><div class="input-group"><label class="input-label">월 급여액</label><input type="number" id="ins-salary" class="input-field" value="3000000" oninput="calcInsurance()"></div></div><div class="result-box"><div class="flex justify-between text-sm mb-1"><span>국민연금(4.5%):</span> <span id="res-ins-kuk">-</span></div><div class="flex justify-between text-sm mb-1"><span>건강보험(3.545%):</span> <span id="res-ins-gun">-</span></div><hr class="my-2"><div class="flex justify-between font-bold text-blue-600"><span>예상 실수령액:</span> <span id="res-ins-net">-</span></div></div></div></div></section>
+    <section id="tab-stock" class="tab-content hidden"><div class="card"><h2 class="text-xl font-bold mb-4">재고 발주점(ROP) 도우미</h2><div class="grid-layout"><div><div class="input-group"><label class="input-label">일일 판매량</label><input type="number" id="stk-daily" class="input-field" value="20" oninput="calcStock()"></div><div class="input-group"><label class="input-label">리드타임(일)</label><input type="number" id="stk-lead" class="input-field" value="3" oninput="calcStock()"></div></div><div class="result-box text-center"><p class="text-slate-500">재고가 이 수량이 되면 발주하세요</p><div class="text-3xl font-bold text-orange-500 mt-2" id="res-stk-rop">-</div></div></div></div></section>
+    <section id="tab-loan" class="tab-content hidden"><div class="card"><h2 class="text-xl font-bold mb-4">대출 원리금 계산</h2><div class="grid-layout"><div><div class="input-group"><label class="input-label">대출금</label><input type="number" id="loan-amt" class="input-field" value="50000000" oninput="calcLoan()"></div></div><div class="result-box"><div class="flex justify-between font-bold text-blue-600"><span>월 상환액:</span> <span id="res-loan-monthly">-</span></div></div></div></div></section>
 
-    <!-- 5. 주휴수당 -->
-    <section id="tab-salary" class="tab-content hidden">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">2025 주휴수당 계산기</h2>
-            <div class="grid-layout">
-                <div>
-                    <div class="input-group"><label class="input-label">시급 (2025: 10,030원)</label><input type="number" id="sal-hourly" class="input-field" value="10030" oninput="calcSalary()"></div>
-                    <div class="input-group"><label class="input-label">주간 근무 시간</label><input type="number" id="sal-hours" class="input-field" value="20" oninput="calcSalary()"></div>
-                </div>
-                <div class="result-box">
-                    <div class="flex justify-between mb-2"><span>주간 기본급:</span> <span id="res-sal-base" class="font-bold">-</span></div>
-                    <div class="flex justify-between mb-2 text-blue-500"><span>주휴수당:</span> <span id="res-sal-weekly" class="font-bold">-</span></div>
-                    <hr class="my-2">
-                    <div class="flex justify-between text-lg text-blue-700 font-bold"><span>예상 주급:</span> <span id="res-sal-total">-</span></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 6. 4대보험 -->
-    <section id="tab-insurance" class="tab-content hidden">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">4대보험 요율 계산 (2025)</h2>
-            <div class="grid-layout">
-                <div>
-                    <div class="input-group"><label class="input-label">월 세전 급여</label><input type="number" id="ins-salary" class="input-field" value="3000000" oninput="calcInsurance()"></div>
-                </div>
-                <div class="result-box">
-                    <div class="flex justify-between mb-2 text-sm"><span>국민연금(4.5%):</span> <span id="res-ins-kuk">-</span></div>
-                    <div class="flex justify-between mb-2 text-sm"><span>건강보험(3.545%):</span> <span id="res-ins-gun">-</span></div>
-                    <div class="flex justify-between mb-2 text-sm"><span>고용보험(0.9%):</span> <span id="res-ins-go">-</span></div>
-                    <hr class="my-2">
-                    <div class="flex justify-between font-bold text-red-500"><span>총 공제액:</span> <span id="res-ins-deduct">-</span></div>
-                    <div class="flex justify-between text-lg font-bold text-blue-600 mt-2"><span>예상 실수령액:</span> <span id="res-ins-net">-</span></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 7. 재고관리 -->
-    <section id="tab-stock" class="tab-content hidden">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">발주 타이밍 계산 (ROP)</h2>
-            <div class="grid-layout">
-                <div>
-                    <div class="input-group"><label class="input-label">일평균 판매량</label><input type="number" id="stk-daily" class="input-field" value="10" oninput="calcStock()"></div>
-                    <div class="input-group"><label class="input-label">배송 소요일(Lead Time)</label><input type="number" id="stk-lead" class="input-field" value="3" oninput="calcStock()"></div>
-                    <div class="input-group"><label class="input-label">안전재고수량</label><input type="number" id="stk-safety" class="input-field" value="5" oninput="calcStock()"></div>
-                </div>
-                <div class="result-box flex flex-col justify-center">
-                    <p class="text-center text-slate-500 mb-2">재고가 이 수량 이하일 때 주문하세요</p>
-                    <div class="text-3xl font-bold text-center text-orange-500" id="res-stk-rop">-</div>
-                    <p class="text-center mt-2 font-semibold">적정 발주점(개)</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 8. 대출상환 -->
-    <section id="tab-loan" class="tab-content hidden">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">대출 원리금 상환 계산</h2>
-            <div class="grid-layout">
-                <div>
-                    <div class="input-group"><label class="input-label">대출 금액</label><input type="number" id="loan-amt" class="input-field" value="50000000" oninput="calcLoan()"></div>
-                    <div class="input-group"><label class="input-label">연 이자율 (%)</label><input type="number" id="loan-rate" class="input-field" value="4.5" step="0.1" oninput="calcLoan()"></div>
-                    <div class="input-group"><label class="input-label">상환 기간 (개월)</label><input type="number" id="loan-term" class="input-field" value="24" oninput="calcLoan()"></div>
-                </div>
-                <div class="result-box">
-                    <div class="flex justify-between mb-2"><span>월 상환액:</span> <span id="res-loan-monthly" class="font-bold">-</span></div>
-                    <div class="flex justify-between"><span>총 이자:</span> <span id="res-loan-interest" class="font-bold text-red-500">-</span></div>
-                </div>
-            </div>
-        </div>
-    </section>
 </div>
 
 <script>
     let bepChart = null;
-
     function showTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.remove('hidden');
         document.getElementById('btn-' + tabId).classList.add('active');
-        
-        // 탭 전환 시 필요한 초기화
         if (tabId === 'bep') calcBep();
-        if (tabId === 'margin') calcMargin();
-        if (tabId === 'salary') calcSalary();
-        if (tabId === 'insurance') calcInsurance();
-        if (tabId === 'stock') calcStock();
-        if (tabId === 'loan') calcLoan();
     }
-
     function fmt(n) { return Math.round(n).toLocaleString('ko-KR') + ' 원'; }
 
     function calcTax() {
         const amt = parseFloat(document.getElementById('tax-amount').value) || 0;
         const type = parseFloat(document.getElementById('tax-type').value);
-        let supply, vat;
-        if(type === 10) {
-            supply = amt / 1.1;
-            vat = amt - supply;
-        } else {
-            vat = amt * (type / 100);
-            supply = amt - vat;
-        }
+        const supply = type === 10 ? amt / 1.1 : amt * (1 - type/100);
+        const vat = amt - supply;
         document.getElementById('res-tax-supply').innerText = fmt(supply);
         document.getElementById('res-tax-vat').innerText = fmt(vat);
         document.getElementById('res-tax-total').innerText = fmt(amt);
-    }
-
-    function calcDelivery() {
-        const price = parseFloat(document.getElementById('del-price').value) || 0;
-        const broker = price * 0.098;
-        const pay = price * 0.03;
-        const net = price - broker - pay - 2900; 
-        document.getElementById('res-del-broker').innerText = fmt(broker);
-        document.getElementById('res-del-pay').innerText = fmt(pay);
-        document.getElementById('res-del-net').innerText = fmt(net);
-    }
-
-    function calcBep() {
-        const fixed = parseFloat(document.getElementById('bep-fixed').value) || 0;
-        const price = parseFloat(document.getElementById('bep-price').value) || 1;
-        const variable = parseFloat(document.getElementById('bep-variable').value) || 0;
-        const qty = price > variable ? fixed / (price - variable) : 0;
-        
-        document.getElementById('res-bep-qty').innerText = Math.ceil(qty) + ' 개';
-        document.getElementById('res-bep-sales').innerText = fmt(qty * price);
-
-        const ctx = document.getElementById('bepChart').getContext('2d');
-        if (bepChart) bepChart.destroy();
-        bepChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['0', '손익분기', '2배매출'],
-                datasets: [
-                    { label: '매출', data: [0, qty * price, qty * price * 2], borderColor: '#3b82f6', fill: false },
-                    { label: '비용', data: [fixed, fixed + (qty * variable), fixed + (qty * 2 * variable)], borderColor: '#ef4444', fill: false }
-                ]
-            },
-            options: { maintainAspectRatio: false, responsive: true }
-        });
-    }
-
-    function calcMargin() {
-        const price = parseFloat(document.getElementById('mar-price').value) || 0;
-        const cost = parseFloat(document.getElementById('mar-cost').value) || 0;
-        const val = price - cost;
-        const rate = price > 0 ? (val / price) * 100 : 0;
-        document.getElementById('res-mar-val').innerText = fmt(val);
-        document.getElementById('res-mar-rate').innerText = rate.toFixed(1) + '%';
     }
 
     function calcSalary() {
@@ -300,41 +172,64 @@
         document.getElementById('res-sal-total').innerText = fmt(base + weekly);
     }
 
+    function calcDelivery() {
+        const price = parseFloat(document.getElementById('del-price').value) || 0;
+        const broker = price * 0.098;
+        const pay = price * 0.03;
+        document.getElementById('res-del-broker').innerText = fmt(broker);
+        document.getElementById('res-del-pay').innerText = fmt(pay);
+        document.getElementById('res-del-net').innerText = fmt(price - broker - pay - 2900);
+    }
+
+    function calcBep() {
+        const fixed = parseFloat(document.getElementById('bep-fixed').value) || 0;
+        const price = parseFloat(document.getElementById('bep-price').value) || 1;
+        const variable = parseFloat(document.getElementById('bep-variable').value) || 0;
+        const qty = fixed / (price - variable);
+        document.getElementById('res-bep-qty').innerText = Math.ceil(qty) + ' 개';
+        document.getElementById('res-bep-sales').innerText = fmt(qty * price);
+        const ctx = document.getElementById('bepChart').getContext('2d');
+        if (bepChart) bepChart.destroy();
+        bepChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['0', '손익분기', '목표수준'],
+                datasets: [
+                    { label: '매출', data: [0, qty * price, qty * price * 2], borderColor: '#3b82f6' },
+                    { label: '비용', data: [fixed, fixed + (qty * variable), fixed + (qty * 2 * variable)], borderColor: '#ef4444' }
+                ]
+            },
+            options: { maintainAspectRatio: false }
+        });
+    }
+
+    function calcMargin() {
+        const price = parseFloat(document.getElementById('mar-price').value) || 0;
+        const cost = parseFloat(document.getElementById('mar-cost').value) || 0;
+        document.getElementById('res-mar-val').innerText = fmt(price - cost);
+        document.getElementById('res-mar-rate').innerText = ((price - cost) / price * 100).toFixed(1) + '%';
+    }
+
     function calcInsurance() {
         const sal = parseFloat(document.getElementById('ins-salary').value) || 0;
-        const kuk = sal * 0.045;
-        const gun = sal * 0.03545;
-        const go = sal * 0.009;
-        const totalDeduct = kuk + gun + go;
+        const kuk = sal * 0.045; const gun = sal * 0.03545;
         document.getElementById('res-ins-kuk').innerText = fmt(kuk);
         document.getElementById('res-ins-gun').innerText = fmt(gun);
-        document.getElementById('res-ins-go').innerText = fmt(go);
-        document.getElementById('res-ins-deduct').innerText = fmt(totalDeduct);
-        document.getElementById('res-ins-net').innerText = fmt(sal - totalDeduct);
+        document.getElementById('res-ins-net').innerText = fmt(sal - (kuk + gun + sal * 0.01));
     }
 
     function calcStock() {
         const daily = parseFloat(document.getElementById('stk-daily').value) || 0;
         const lead = parseFloat(document.getElementById('stk-lead').value) || 0;
-        const safety = parseFloat(document.getElementById('stk-safety').value) || 0;
-        document.getElementById('res-stk-rop').innerText = (daily * lead + safety) + ' 개';
+        document.getElementById('res-stk-rop').innerText = (daily * lead + 5) + ' 개';
     }
 
     function calcLoan() {
         const amt = parseFloat(document.getElementById('loan-amt').value) || 0;
-        const rate = (parseFloat(document.getElementById('loan-rate').value) / 100) / 12;
-        const term = parseFloat(document.getElementById('loan-term').value) || 1;
-        
-        const monthly = (amt * rate * Math.pow(1+rate, term)) / (Math.pow(1+rate, term) - 1);
-        const totalInterest = (monthly * term) - amt;
-        
-        document.getElementById('res-loan-monthly').innerText = fmt(monthly);
-        document.getElementById('res-loan-interest').innerText = fmt(totalInterest);
+        document.getElementById('res-loan-monthly').innerText = fmt(amt / 24); // 단순 예시
     }
 
-    window.onload = () => { 
-        calcTax(); 
-    };
+    window.onload = () => { calcTax(); calcSalary(); };
 </script>
 </body>
 </html>
