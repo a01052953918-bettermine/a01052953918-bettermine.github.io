@@ -160,6 +160,8 @@ input, select, textarea { font-family: inherit; }
 .icon-btn:hover { border-color: var(--honey); color: var(--honey-deep); }
 .icon-btn.launch { border-color: var(--honey); color: var(--honey-deep); }
 .empty-note { padding: 40px 20px; text-align: center; color: var(--ink-faint); font-size: 13px; }
+.pw-cell { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.pw-cell .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- Backup panel ---------- */
 .principle-box { display: flex; gap: 14px; align-items: flex-start; padding: 20px 22px; background: var(--sage-tint); border: 1px solid rgba(95,138,114,0.35); border-radius: 14px; }
