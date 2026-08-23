@@ -19,6 +19,11 @@ const DORMANT_THRESHOLD_MS = 180 * 24 * 60 * 60 * 1000;
 const LS_SALT = 'keynook.salt';
 const LS_VAULT = 'keynook.vault';
 const LS_LAST_EXPORT = 'keynook.lastExportAt';
+const LS_GOOGLE_CLIENT_ID = 'keynook.googleClientId';
+const LS_DRIVE_FILE_ID = 'keynook.driveFileId';
+const LS_DRIVE_LAST_SYNC = 'keynook.driveLastSyncAt';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FILENAME = 'keynook-backup.json';
 
 /* ---------------- helpers ---------------- */
 
@@ -97,7 +102,10 @@ const state = {
   vault: null, // { accounts: [...] }
   filter: 'all', // 'all' | category id | 'trash'
   search: '',
+  driveToken: null, // in-memory only, never persisted
 };
+
+let googleTokenClient = null;
 
 /* ---------------- persistence ---------------- */
 
@@ -606,6 +614,10 @@ function renderBackupPanel() {
       </div>
     </div>
     <p style="font-size:12px;color:var(--ink-faint);">가져오기는 현재 기기의 금고를 백업 파일로 완전히 교체합니다. 되돌릴 수 없으니 필요하면 먼저 현재 금고를 내보내두세요.</p>
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--ink-dim);margin-bottom:12px;">Google Drive 연동</div>
+      <div id="drive-section"></div>
+    </div>
   `;
   area.appendChild(wrap);
 
@@ -613,6 +625,175 @@ function renderBackupPanel() {
   $('#input-import').addEventListener('change', (e) => {
     if (e.target.files[0]) importVaultFile(e.target.files[0]);
   });
+
+  renderDriveSection();
+}
+
+function renderDriveSection() {
+  const el = $('#drive-section');
+  if (!el) return;
+  const clientId = localStorage.getItem(LS_GOOGLE_CLIENT_ID) || '';
+
+  if (!clientId) {
+    el.innerHTML = `
+      <div class="action-card" style="flex-direction:column;align-items:stretch;gap:12px;">
+        <div class="desc">암호화된 백업을 이 기기 저장 없이 본인 Google Drive에도 보관하려면, Google Cloud Console에서 발급받은 OAuth 클라이언트 ID를 입력하세요. 클라이언트 ID는 이 브라우저에만 저장됩니다.</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="drive-client-id-input" placeholder="xxxxxxxxxx.apps.googleusercontent.com" style="flex:1;padding:9px 12px;border:1px solid var(--line-soft);border-radius:8px;font-size:12.5px;">
+          <button class="btn-icon accent" id="btn-drive-save-id">저장</button>
+        </div>
+      </div>
+    `;
+    $('#btn-drive-save-id').addEventListener('click', () => {
+      const val = $('#drive-client-id-input').value.trim();
+      if (!val) { toast('클라이언트 ID를 입력하세요'); return; }
+      localStorage.setItem(LS_GOOGLE_CLIENT_ID, val);
+      googleTokenClient = null;
+      toast('저장했습니다');
+      renderDriveSection();
+    });
+    return;
+  }
+
+  if (!state.driveToken) {
+    el.innerHTML = `
+      <div class="action-card">
+        <div class="left">
+          <div class="ico">${svgDrive()}</div>
+          <div><div class="title">Google 계정 연결</div><div class="desc">클라이언트 ID 설정됨 — 계정을 연결하면 백업/복원이 가능합니다</div></div>
+        </div>
+        <button class="btn-icon accent" id="btn-drive-connect">연결</button>
+      </div>
+      <button class="btn-ghost" id="btn-drive-reset-id" style="margin-top:8px;font-size:11.5px;padding:6px 10px;">다른 클라이언트 ID 사용</button>
+    `;
+    $('#btn-drive-connect').addEventListener('click', connectGoogleDrive);
+    $('#btn-drive-reset-id').addEventListener('click', () => {
+      localStorage.removeItem(LS_GOOGLE_CLIENT_ID);
+      googleTokenClient = null;
+      renderDriveSection();
+    });
+    return;
+  }
+
+  const lastSync = localStorage.getItem(LS_DRIVE_LAST_SYNC);
+  el.innerHTML = `
+    <div class="action-grid">
+      <div class="action-card">
+        <div class="left">
+          <div class="ico">${svgDrive()}</div>
+          <div><div class="title">Drive에 백업</div><div class="desc">${lastSync ? '마지막 동기화 ' + fmtRelative(Number(lastSync)) : '아직 동기화한 적 없음'}</div></div>
+        </div>
+        <button class="btn-icon accent" id="btn-drive-backup">지금 저장</button>
+      </div>
+      <div class="action-card">
+        <div class="left">
+          <div class="ico">${svgDrive()}</div>
+          <div><div class="title">Drive에서 복원</div><div class="desc">이 기기의 금고를 Drive의 백업으로 교체</div></div>
+        </div>
+        <button class="btn-icon" id="btn-drive-restore">복원</button>
+      </div>
+    </div>
+  `;
+  $('#btn-drive-backup').addEventListener('click', driveBackupNow);
+  $('#btn-drive-restore').addEventListener('click', driveRestoreNow);
+}
+
+function ensureGoogleTokenClient() {
+  const clientId = localStorage.getItem(LS_GOOGLE_CLIENT_ID);
+  if (!clientId || typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) return null;
+  if (!googleTokenClient) {
+    googleTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: DRIVE_SCOPE,
+      callback: (resp) => {
+        if (resp.error) { toast('연결에 실패했습니다'); return; }
+        state.driveToken = resp.access_token;
+        toast('Google 계정을 연결했습니다');
+        renderDriveSection();
+      },
+    });
+  }
+  return googleTokenClient;
+}
+
+function connectGoogleDrive() {
+  const client = ensureGoogleTokenClient();
+  if (!client) { toast('Google 로그인 스크립트를 아직 불러오지 못했습니다. 잠시 후 다시 시도하세요.'); return; }
+  client.requestAccessToken();
+}
+
+async function driveCreateFile(token, filename, contentObj) {
+  const boundary = 'keynook_' + Date.now();
+  const metadata = { name: filename, mimeType: 'application/json' };
+  const body =
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(contentObj)}\r\n` +
+    `--${boundary}--`;
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body,
+  });
+  if (!res.ok) throw new Error('drive create failed: ' + res.status);
+  return res.json();
+}
+
+async function driveUpdateFile(token, fileId, contentObj) {
+  const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(contentObj),
+  });
+  if (!res.ok) throw new Error('drive update failed: ' + res.status);
+  return res.json();
+}
+
+async function driveDownloadFile(token, fileId) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('drive download failed: ' + res.status);
+  return res.json();
+}
+
+async function driveBackupNow() {
+  if (!state.driveToken) { toast('먼저 Google 계정을 연결하세요'); return; }
+  const salt = localStorage.getItem(LS_SALT);
+  const raw = localStorage.getItem(LS_VAULT);
+  if (!salt || !raw) return;
+  const payload = { app: 'keynook', version: 1, salt, ...JSON.parse(raw) };
+  try {
+    let fileId = localStorage.getItem(LS_DRIVE_FILE_ID);
+    if (fileId) {
+      await driveUpdateFile(state.driveToken, fileId, payload);
+    } else {
+      const created = await driveCreateFile(state.driveToken, DRIVE_FILENAME, payload);
+      fileId = created.id;
+      localStorage.setItem(LS_DRIVE_FILE_ID, fileId);
+    }
+    localStorage.setItem(LS_DRIVE_LAST_SYNC, String(Date.now()));
+    toast('Google Drive에 저장했습니다');
+    renderDriveSection();
+    renderSidebar();
+  } catch (err) {
+    toast('Drive 저장에 실패했습니다');
+  }
+}
+
+async function driveRestoreNow() {
+  if (!state.driveToken) { toast('먼저 Google 계정을 연결하세요'); return; }
+  const fileId = localStorage.getItem(LS_DRIVE_FILE_ID);
+  if (!fileId) { toast('이 클라이언트 ID로 저장된 백업이 없습니다 — 먼저 "지금 저장"을 눌러보세요'); return; }
+  try {
+    const data = await driveDownloadFile(state.driveToken, fileId);
+    if (!data.salt || !data.iv || !data.ct) throw new Error('invalid backup shape');
+    localStorage.setItem(LS_SALT, data.salt);
+    localStorage.setItem(LS_VAULT, JSON.stringify({ iv: data.iv, ct: data.ct }));
+    toast('Drive에서 가져왔습니다. 다시 잠금 해제해주세요.');
+    lockVault();
+  } catch (err) {
+    toast('Drive에서 가져오지 못했습니다');
+  }
 }
 
 async function exportVault() {
@@ -680,6 +861,7 @@ function svgEdit() { return `<svg width="12" height="12" viewBox="0 0 24 24" fil
 function svgTrash() { return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>`; }
 function svgDownload() { return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>`; }
 function svgUpload() { return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"></path><path d="m7 14 5-5 5 5"></path><path d="M5 3h14"></path></svg>`; }
+function svgDrive() { return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 3 5 9-3 5H4l3-5-3-5z"></path><path d="m17 3-5 9 3 5h5l-3-5 3-5z"></path><path d="m9 17 3-5h5"></path></svg>`; }
 function svgLock() { return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>`; }
 
 /* ---------------- init ---------------- */
