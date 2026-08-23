@@ -163,6 +163,28 @@ input, select, textarea { font-family: inherit; }
 .pw-cell { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .pw-cell .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* ---------- Help / guide ---------- */
+.guide-toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.guide-toc a { padding: 6px 13px; background: var(--paper); border: 1px solid var(--line-soft); border-radius: 999px; font-size: 12px; color: var(--ink-dim); text-decoration: none; }
+.guide-toc a:hover { border-color: var(--honey); color: var(--honey-deep); }
+.guide-section { background: var(--paper); border: 1px solid var(--line-soft); border-radius: 16px; padding: 22px 24px; box-shadow: var(--shadow); scroll-margin-top: 16px; }
+.guide-section h3 { font-family: "Gowun Batang", serif; font-size: 16px; margin: 0 0 4px; display: flex; align-items: center; gap: 9px; }
+.guide-section h3 .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--honey-deep); font-weight: 700; }
+.guide-section .sub { font-size: 12.5px; color: var(--ink-faint); margin: 0 0 14px; }
+.guide-step { display: flex; gap: 12px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid var(--line-soft); }
+.guide-step:last-child { border-bottom: none; padding-bottom: 0; }
+.guide-step:first-child { padding-top: 0; }
+.guide-step .num { width: 22px; height: 22px; border-radius: 50%; background: var(--honey-tint); color: var(--honey-deep); display: flex; align-items: center; justify-content: center; font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.guide-step .body { font-size: 13px; line-height: 1.7; color: var(--ink); }
+.guide-step .body b { color: var(--ink); }
+.guide-note { display: flex; gap: 10px; font-size: 12px; color: var(--ink-dim); background: var(--paper-2); padding: 11px 13px; border-radius: 9px; line-height: 1.6; margin-top: 6px; }
+.guide-note.warn { background: var(--warn-tint); color: var(--ink-dim); }
+.guide-field-table { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.guide-field-row { display: grid; grid-template-columns: 130px 1fr; gap: 12px; font-size: 12.5px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+.guide-field-row:last-child { border-bottom: none; }
+.guide-field-row .fname { font-weight: 700; color: var(--ink); }
+.guide-field-row .fdesc { color: var(--ink-dim); line-height: 1.6; }
+
 /* ---------- Backup panel ---------- */
 .principle-box { display: flex; gap: 14px; align-items: flex-start; padding: 20px 22px; background: var(--sage-tint); border: 1px solid rgba(95,138,114,0.35); border-radius: 14px; }
 .principle-box .label { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 6px; font-weight: 700; }

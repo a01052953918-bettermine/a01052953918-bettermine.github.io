@@ -205,11 +205,17 @@ function renderSidebar() {
 
   const nav = $('#nav-list');
   nav.innerHTML = '';
-  const items = [{ id: 'all', label: '전체 계정' }, ...CATEGORIES, { id: 'trash', label: '휴지통' }, { id: 'reveal', label: '전체 보기 (ID·비밀번호)' }, { id: 'backup', label: '백업 · 내보내기' }];
+  const items = [
+    { id: 'all', label: '전체 계정' }, ...CATEGORIES,
+    { id: 'trash', label: '휴지통' },
+    { id: 'reveal', label: '전체 보기 (ID·비밀번호)' },
+    { id: 'backup', label: '백업 · 내보내기', noCount: true },
+    { id: 'help', label: '사용설명서', noCount: true },
+  ];
   items.forEach((it) => {
     const btn = document.createElement('button');
     btn.className = 'nav-item' + (state.filter === it.id ? ' active' : '');
-    btn.innerHTML = `<span>${escapeHtml(it.label)}</span><span class="count mono">${counts[it.id] || 0}</span>`;
+    btn.innerHTML = `<span>${escapeHtml(it.label)}</span>${it.noCount ? '' : `<span class="count mono">${counts[it.id] || 0}</span>`}`;
     btn.addEventListener('click', () => { state.filter = it.id; renderApp(); });
     nav.appendChild(btn);
   });
@@ -223,6 +229,7 @@ function renderContent() {
   if (state.filter === 'trash') { area.innerHTML = ''; area.appendChild(buildTrashView()); return; }
   if (state.filter === 'reveal') { renderRevealPanel(); return; }
   if (state.filter === 'backup') { renderBackupPanel(); return; }
+  if (state.filter === 'help') { renderHelpPanel(); return; }
   area.innerHTML = '';
   area.appendChild(buildStatGrid());
   area.appendChild(buildListView());
@@ -698,6 +705,95 @@ function importVaultFile(file) {
     }
   };
   reader.readAsText(file);
+}
+
+/* ---------------- help / guide ---------------- */
+
+function renderHelpPanel() {
+  const area = $('#content-area');
+  area.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:16px;max-width:820px;';
+
+  wrap.innerHTML = `
+    <div class="guide-toc">
+      <a href="#g-start">시작하기</a>
+      <a href="#g-add">계정 등록</a>
+      <a href="#g-manage">계정 관리</a>
+      <a href="#g-reveal">전체 보기</a>
+      <a href="#g-backup">백업 · 기기 이전</a>
+      <a href="#g-ext">브라우저 확장(자동입력)</a>
+      <a href="#g-security">보안 원칙 · 주의사항</a>
+    </div>
+
+    <div class="guide-section" id="g-start">
+      <h3><span class="n">01</span>시작하기</h3>
+      <p class="sub">키눅은 이 브라우저에만 암호화해서 저장하는 개인용 계정 금고입니다. 서버에는 아무것도 저장되지 않습니다.</p>
+      <div class="guide-step"><span class="num">1</span><div class="body"><b>금고 만들기</b> — 처음 접속하면 "마스터 비밀번호 설정" 화면이 뜹니다. 비밀번호를 두 번 입력하면 그 비밀번호로 암호화된 빈 금고가 이 브라우저에 만들어집니다.</div></div>
+      <div class="guide-step"><span class="num">2</span><div class="body"><b>다시 접속(잠금 해제)</b> — 이미 금고가 있는 상태로 다시 접속하면 "다시 오셨네요" 화면이 뜹니다. 마스터 비밀번호만 입력하면 잠금이 풀립니다.</div></div>
+      <div class="guide-step"><span class="num">3</span><div class="body"><b>잠그기</b> — 상단 오른쪽의 자물쇠 아이콘을 누르면 즉시 잠깁니다. 창을 닫거나 새로고침해도 자동으로 잠긴 상태로 시작합니다.</div></div>
+      <div class="guide-note warn">마스터 비밀번호를 잊으면 <b>복구할 방법이 없습니다.</b> 서버에 사본이 없기 때문에 비밀번호 재설정 기능 자체가 존재하지 않아요. 잊지 않을 곳에 따로 기록해두시길 권합니다.</div>
+    </div>
+
+    <div class="guide-section" id="g-add">
+      <h3><span class="n">02</span>계정 등록</h3>
+      <p class="sub">상단의 "계정 등록" 버튼을 누르면 입력 폼이 뜹니다. 각 항목은 다음과 같습니다.</p>
+      <div class="guide-field-table">
+        <div class="guide-field-row"><span class="fname">서비스명</span><span class="fdesc">Gmail, 국민은행처럼 알아보기 쉬운 이름 (필수)</span></div>
+        <div class="guide-field-row"><span class="fname">카테고리</span><span class="fdesc">이메일·소셜 / 구독·쇼핑·게임 / 업무·개발 / 금융·정부 / 기타. <b>"금융·정부"를 선택하면 비밀번호 입력란이 사라집니다</b> — 이 카테고리는 실제 인증수단 대신 "어디에 있는지" 위치만 기록하도록 설계했습니다.</span></div>
+        <div class="guide-field-row"><span class="fname">계정 ID / 이메일</span><span class="fdesc">로그인용 아이디. 금융·정부 계정은 여기에 "위치: OO은행 앱" 처럼 메모하듯 적어도 됩니다.</span></div>
+        <div class="guide-field-row"><span class="fname">비밀번호</span><span class="fdesc">금융·정부 이외 카테고리에서만 보입니다. 평문으로 보이는 건 의도된 동작입니다 — 등록할 때 오타를 바로 확인하기 위함이며, 저장될 땐 암호화됩니다.</span></div>
+        <div class="guide-field-row"><span class="fname">바로가기 URL</span><span class="fdesc">선택 입력. 이걸 넣어두면 대시보드의 "실행" 버튼으로 바로 그 사이트를 열 수 있고, 브라우저 확장의 자동입력 매칭 기준으로도 쓰입니다.</span></div>
+        <div class="guide-field-row"><span class="fname">2차 인증 백업코드</span><span class="fdesc">선택 입력. OTP 앱을 재설치할 때 필요한 복구코드를 붙여넣어 두는 칸입니다.</span></div>
+        <div class="guide-field-row"><span class="fname">메모</span><span class="fdesc">선택 입력. 자유 메모.</span></div>
+        <div class="guide-field-row"><span class="fname">중요도</span><span class="fdesc">일반 · 중요 · 민감 중 선택. 분류용 표시이며 기능적으로 다른 제약은 없습니다.</span></div>
+      </div>
+    </div>
+
+    <div class="guide-section" id="g-manage">
+      <h3><span class="n">03</span>계정 관리</h3>
+      <div class="guide-step"><span class="num">1</span><div class="body"><b>검색·필터</b> — 상단 검색창에 서비스명을 입력하거나, 왼쪽 사이드바에서 카테고리를 클릭하면 그 항목만 보입니다.</div></div>
+      <div class="guide-step"><span class="num">2</span><div class="body"><b>실행 버튼</b> — 계정 목록 각 행의 원형 화살표 아이콘을 누르면 등록해둔 바로가기 URL이 새 탭으로 열리고, 동시에 "최근 확인" 시각이 갱신됩니다.</div></div>
+      <div class="guide-step"><span class="num">3</span><div class="body"><b>유출 확인</b> — 비밀번호가 저장된 계정에는 방패 아이콘이 함께 뜹니다. 누르면 Have I Been Pwned의 유출 데이터베이스에 이 비밀번호가 있는지 확인합니다 (비밀번호 자체는 전송되지 않고, 암호화된 일부 조각만 조회합니다).</div></div>
+      <div class="guide-step"><span class="num">4</span><div class="body"><b>수정</b> — 연필 아이콘을 누르면 등록 폼이 그대로 열리며 값을 고칠 수 있습니다.</div></div>
+      <div class="guide-step"><span class="num">5</span><div class="body"><b>삭제 · 휴지통</b> — 휴지통 아이콘을 누르면 즉시 사라지지 않고 "휴지통"으로 이동합니다. 사이드바의 "휴지통" 메뉴에서 90일 이내면 <b>복구</b> 버튼으로 되돌릴 수 있고, 90일이 지나면 다음 접속 시 자동으로 완전히 삭제됩니다.</div></div>
+    </div>
+
+    <div class="guide-section" id="g-reveal">
+      <h3><span class="n">04</span>전체 보기 (ID·비밀번호)</h3>
+      <p class="sub">사이드바의 "전체 보기" 메뉴는 등록된 모든 계정의 아이디·비밀번호를 표로 한눈에 보여줍니다.</p>
+      <div class="guide-step"><span class="num">1</span><div class="body">이 화면은 <b>파일로 저장되거나 어디로도 전송되지 않습니다.</b> 잠금 해제된 이 탭에서만 보이고, 잠그거나 창을 닫으면 사라집니다.</div></div>
+      <div class="guide-step"><span class="num">2</span><div class="body">비밀번호 옆의 복사 아이콘을 누르면 해당 비밀번호만 클립보드에 복사됩니다.</div></div>
+      <div class="guide-step"><span class="num">3</span><div class="body">금융·정부 계정은 애초에 비밀번호를 저장하지 않으므로 "위치만 기록됨"으로 표시됩니다.</div></div>
+      <div class="guide-note warn">화면 캡처나 화면 공유 중에는 이 메뉴를 열지 않도록 주의하세요.</div>
+    </div>
+
+    <div class="guide-section" id="g-backup">
+      <h3><span class="n">05</span>백업 · 다른 기기로 이전</h3>
+      <p class="sub">키눅은 서버 동기화가 없기 때문에, 데이터를 옮기거나 백업하려면 파일을 직접 내보내고 가져와야 합니다.</p>
+      <div class="guide-step"><span class="num">1</span><div class="body"><b>내보내기</b> — 사이드바 "백업 · 내보내기" → 내보내기 버튼. 저장 위치를 고르는 창이 뜨면 원하는 폴더를 선택합니다. <b>이때 Google Drive나 OneDrive처럼 클라우드와 동기화되는 폴더를 선택하면, 별도 연동 없이 그대로 클라우드에도 백업됩니다.</b></div></div>
+      <div class="guide-step"><span class="num">2</span><div class="body"><b>가져오기</b> — 같은 화면의 가져오기 버튼으로 내보낸 JSON 파일을 선택하면, 이 기기의 금고가 그 백업 내용으로 완전히 교체됩니다. 되돌릴 수 없으니 먼저 현재 금고를 내보내둔 다음 진행하세요.</div></div>
+      <div class="guide-step"><span class="num">3</span><div class="body"><b>다른 기기(노트북·폰)로 옮기기</b> — 새 기기에서 같은 주소로 처음 접속하면 "마스터 비밀번호 설정" 화면 아래에 <b>"기존 백업 파일 가져오기"</b> 링크가 있습니다. 클라우드나 USB 등으로 옮겨온 백업 파일을 선택하고, 원래 쓰던 마스터 비밀번호로 잠금을 해제하면 데이터가 그대로 넘어옵니다.</div></div>
+      <div class="guide-note">실시간 동기화가 아니라 <b>수동 동기화</b>입니다. 여러 기기에서 계정을 등록·수정했다면, 최신 상태를 다시 내보내서 다른 기기에 가져오기 해줘야 서로 맞춰집니다.</div>
+    </div>
+
+    <div class="guide-section" id="g-ext">
+      <h3><span class="n">06</span>브라우저 확장 (자동입력)</h3>
+      <p class="sub">로그인 페이지의 아이디·비밀번호 입력란을 실제로 채워주는 별도 프로그램입니다. 대리 로그인이 아니라 <b>필드만 채우고, 로그인 제출은 항상 사용자가 직접</b> 합니다.</p>
+      <div class="guide-step"><span class="num">1</span><div class="body"><b>설치</b> — 아직 크롬 웹 스토어에는 없어 "개발자 모드"로 직접 설치해야 합니다. <code>chrome://extensions</code> → 개발자 모드 켜기 → "압축해제된 확장 프로그램을 로드합니다" → keynook-extension 폴더 선택.</div></div>
+      <div class="guide-step"><span class="num">2</span><div class="body"><b>데이터 연결</b> — 웹앱에서 내보낸 백업 파일을 확장 아이콘에서 "백업 파일 가져오기"로 불러온 뒤, 같은 마스터 비밀번호로 잠금을 해제합니다. 확장은 웹앱과 저장소가 분리돼 있어 이 과정이 필요합니다.</div></div>
+      <div class="guide-step"><span class="num">3</span><div class="body"><b>사용</b> — 로그인하려는 사이트에서 확장 아이콘 클릭 → 그 사이트에 등록된 계정이 목록에 뜨면 <b>채우기</b> 클릭 → 입력란이 채워지면 로그인 버튼은 직접 누릅니다.</div></div>
+    </div>
+
+    <div class="guide-section" id="g-security">
+      <h3><span class="n">07</span>보안 원칙 · 주의사항</h3>
+      <div class="guide-step"><span class="num">1</span><div class="body">마스터 비밀번호로부터 PBKDF2(20만 회)로 키를 만들고, AES-GCM으로 전체 데이터를 암호화해 이 브라우저에만 저장합니다. 서버는 존재하지 않습니다.</div></div>
+      <div class="guide-step"><span class="num">2</span><div class="body">"금융·정부" 카테고리는 실제 인증수단을 저장하지 않고 위치만 기록하도록 설계했습니다 — 대리 로그인·대리 거래는 이 서비스의 범위 밖입니다.</div></div>
+      <div class="guide-step"><span class="num">3</span><div class="body">브라우저의 저장소(localStorage)를 지우거나 브라우저를 재설치하면 백업해두지 않은 데이터는 사라집니다. 정기적으로 내보내기를 해두는 걸 권장합니다.</div></div>
+      <div class="guide-note warn">이 앱은 <b>정식 보안 감사를 거치지 않은 프로토타입</b>입니다. 개인 테스트 용도로는 괜찮지만, 실제로 중요한 비밀번호를 넣고 다른 사람에게 사용을 권하기 전에는 정식 보안 검토가 필요합니다.</div>
+    </div>
+  `;
+  area.appendChild(wrap);
 }
 
 /* ---------------- icons ---------------- */
