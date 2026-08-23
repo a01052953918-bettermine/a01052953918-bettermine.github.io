@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>키눅</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<div id="view-auth">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a56a1f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.5"></circle><path d="M11.2 11.2 20 20M15.5 15.5l2.8-2.8M18.5 18.5l2-2"></path></svg>
+    </div>
+    <div class="brand-text"><span class="name">키눅</span><span class="sub">KEYNOOK · 자동입력</span></div>
+  </div>
+
+  <div id="auth-empty" class="hidden">
+    <p class="hint">아직 이 확장에 가져온 금고가 없습니다. 키눅 웹앱에서 내보낸 백업 파일을 가져오세요.</p>
+    <label class="btn-ghost" style="text-align:center;display:block;">백업 파일 가져오기<input type="file" id="import-input" accept="application/json" class="hidden"></label>
+  </div>
+
+  <form id="auth-form" class="hidden">
+    <input type="password" id="auth-password" placeholder="마스터 비밀번호" autocomplete="current-password" required>
+    <div id="auth-error" class="error"></div>
+    <button type="submit" class="btn-primary">잠금 해제</button>
+  </form>
+</div>
+
+<div id="view-list" class="hidden">
+  <div class="topbar">
+    <span class="site-label" id="site-label">-</span>
+    <button id="btn-lock" class="icon-btn" title="잠그기">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+    </button>
+  </div>
+  <div id="match-list" class="list"></div>
+  <button id="btn-show-all" class="btn-ghost small">전체 계정 보기</button>
+  <div id="all-list" class="list hidden"></div>
+  <p class="disclaimer">필드만 채워 넣습니다 — 로그인 제출은 항상 직접 해주세요.</p>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="popup.js"></script>
+</body>
+</html>
