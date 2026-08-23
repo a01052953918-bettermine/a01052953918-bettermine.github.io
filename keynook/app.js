@@ -205,7 +205,7 @@ function renderSidebar() {
 
   const nav = $('#nav-list');
   nav.innerHTML = '';
-  const items = [{ id: 'all', label: '전체 계정' }, ...CATEGORIES, { id: 'trash', label: '휴지통' }, { id: 'backup', label: '백업 · 내보내기' }];
+  const items = [{ id: 'all', label: '전체 계정' }, ...CATEGORIES, { id: 'trash', label: '휴지통' }, { id: 'reveal', label: '전체 보기 (ID·비밀번호)' }, { id: 'backup', label: '백업 · 내보내기' }];
   items.forEach((it) => {
     const btn = document.createElement('button');
     btn.className = 'nav-item' + (state.filter === it.id ? ' active' : '');
@@ -221,6 +221,7 @@ function renderSidebar() {
 function renderContent() {
   const area = $('#content-area');
   if (state.filter === 'trash') { area.innerHTML = ''; area.appendChild(buildTrashView()); return; }
+  if (state.filter === 'reveal') { renderRevealPanel(); return; }
   if (state.filter === 'backup') { renderBackupPanel(); return; }
   area.innerHTML = '';
   area.appendChild(buildStatGrid());
@@ -510,6 +511,67 @@ async function handleAccountFormSubmit(e) {
   closeAccountModal();
   toast('저장했습니다');
   renderApp();
+}
+
+/* ---------------- reveal-all panel (in-app only, never exported) ---------------- */
+
+function renderRevealPanel() {
+  const area = $('#content-area');
+  area.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:18px;';
+
+  const warn = document.createElement('div');
+  warn.style.cssText = 'display:flex;gap:12px;align-items:flex-start;padding:14px 16px;background:var(--warn-tint);border:1px solid rgba(192,124,30,0.35);border-radius:10px;font-size:12.5px;color:var(--ink-dim);line-height:1.6;';
+  warn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><span><strong style="color:var(--ink);">이 화면은 파일로 저장되거나 내보내지지 않습니다.</strong> 잠금을 해제한 이 브라우저에서만 보이며, 창을 닫거나 잠그면 사라집니다. 화면 캡처·공유 시 주의하세요.</span>`;
+  wrap.appendChild(warn);
+
+  const visible = accountsVisible().sort((a, b) => a.service.localeCompare(b.service));
+  const card = document.createElement('div');
+  card.className = 'list-card';
+  const head = document.createElement('div');
+  head.className = 'row head';
+  head.style.gridTemplateColumns = '1.8fr 1.1fr 1.8fr 1.8fr 1fr';
+  head.innerHTML = `<span>서비스</span><span>카테고리</span><span>아이디</span><span>비밀번호</span><span>상태</span>`;
+  card.appendChild(head);
+
+  if (!visible.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-note';
+    empty.textContent = '등록된 계정이 없습니다.';
+    card.appendChild(empty);
+  } else {
+    visible.forEach((a) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.style.gridTemplateColumns = '1.8fr 1.1fr 1.8fr 1.8fr 1fr';
+      const pwCell = a.storageMode === 'location'
+        ? `<span class="row-sub" style="font-style:italic;">— 위치만 기록됨</span>`
+        : `<span class="mono" style="user-select:all;">${escapeHtml(a.password || '')}</span>`;
+      row.innerHTML = `
+        <span class="row-name" title="${escapeHtml(a.service)}">${escapeHtml(a.service)}</span>
+        <span class="row-sub">${escapeHtml(catLabel(a.category))}</span>
+        <span class="row-sub mono" style="user-select:all;">${escapeHtml(a.username || '-')}</span>
+        <span class="pw-cell">${pwCell}</span>
+        <span>${statusBadge(a)}</span>
+      `;
+      if (a.storageMode !== 'location' && a.password) {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'icon-btn';
+        copyBtn.title = '비밀번호 복사';
+        copyBtn.style.marginLeft = '6px';
+        copyBtn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(a.password).then(() => toast('클립보드에 복사했습니다')).catch(() => toast('복사에 실패했습니다'));
+        });
+        row.querySelector('.pw-cell').appendChild(copyBtn);
+      }
+      card.appendChild(row);
+    });
+  }
+
+  wrap.appendChild(card);
+  area.appendChild(wrap);
 }
 
 /* ---------------- backup panel ---------------- */
