@@ -606,6 +606,12 @@ function renderBackupPanel() {
       </div>
     </div>
     <p style="font-size:12px;color:var(--ink-faint);">가져오기는 현재 기기의 금고를 백업 파일로 완전히 교체합니다. 되돌릴 수 없으니 필요하면 먼저 현재 금고를 내보내두세요.</p>
+    <div class="principle-box" style="background:var(--honey-tint);border-color:rgba(217,164,65,0.35);">
+      <div>
+        <div class="label" style="color:var(--honey-deep);">클라우드에도 백업하려면</div>
+        <div class="text" style="font-size:14px;color:var(--ink);">별도 연동 없이, <strong>내보내기</strong>를 누르고 저장 위치에서 평소 쓰시는 Google Drive · OneDrive 등 클라우드 동기화 폴더를 선택하세요. 그러면 파일이 그 서비스에 그대로 자동 백업됩니다.</div>
+      </div>
+    </div>
   `;
   area.appendChild(wrap);
 
@@ -640,6 +646,28 @@ async function exportVault() {
     } catch (err) {
       if (err && err.code === 'declined') { toast('내보내기를 취소했습니다'); return; }
       // fall through to classic download for any other error
+    }
+  }
+
+  // Modern Chromium browsers: let the user pick the actual save location via
+  // the native OS file picker. Pointing it at a Drive/OneDrive-synced folder
+  // is all "cloud backup" requires here — no account connection needed.
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(jsonStr);
+      await writable.close();
+      localStorage.setItem(LS_LAST_EXPORT, String(Date.now()));
+      toast('백업 파일을 저장했습니다');
+      renderSidebar();
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') { toast('저장을 취소했습니다'); return; }
+      // fall through to the classic download for any other error
     }
   }
 
