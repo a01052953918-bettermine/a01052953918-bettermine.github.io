@@ -210,6 +210,7 @@ function renderSidebar() {
     { id: 'trash', label: '휴지통' },
     { id: 'reveal', label: '전체 보기 (ID·비밀번호)' },
     { id: 'backup', label: '백업 · 내보내기', noCount: true },
+    { id: 'password', label: '비밀번호 변경', noCount: true },
     { id: 'help', label: '사용설명서', noCount: true },
   ];
   items.forEach((it) => {
@@ -229,6 +230,7 @@ function renderContent() {
   if (state.filter === 'trash') { area.innerHTML = ''; area.appendChild(buildTrashView()); return; }
   if (state.filter === 'reveal') { renderRevealPanel(); return; }
   if (state.filter === 'backup') { renderBackupPanel(); return; }
+  if (state.filter === 'password') { renderPasswordPanel(); return; }
   if (state.filter === 'help') { renderHelpPanel(); return; }
   area.innerHTML = '';
   area.appendChild(buildStatGrid());
@@ -707,6 +709,73 @@ function importVaultFile(file) {
   reader.readAsText(file);
 }
 
+/* ---------------- change master password ---------------- */
+
+function renderPasswordPanel() {
+  const area = $('#content-area');
+  area.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:20px;max-width:420px;';
+  wrap.innerHTML = `
+    <div class="principle-box">
+      <div>
+        <div class="label">마스터 비밀번호 변경</div>
+        <div class="text">변경하면 저장된 금고 전체가 새 비밀번호로 다시 암호화됩니다. 이 비밀번호는 서버에 저장되지 않으므로 잊으면 아무도 복구해드릴 수 없어요 — 안전한 곳에 따로 적어두세요.</div>
+      </div>
+    </div>
+    <form id="password-form" style="display:flex;flex-direction:column;gap:16px;">
+      <div class="field">
+        <label>현재 비밀번호</label>
+        <input type="password" id="pw-current" autocomplete="current-password" required>
+      </div>
+      <div class="field">
+        <label>새 비밀번호</label>
+        <input type="password" id="pw-new" autocomplete="new-password" required>
+      </div>
+      <div class="field">
+        <label>새 비밀번호 확인</label>
+        <input type="password" id="pw-new-confirm" autocomplete="new-password" required>
+      </div>
+      <div id="pw-error" class="auth-error"></div>
+      <button type="submit" class="btn-primary">비밀번호 변경</button>
+    </form>
+  `;
+  area.appendChild(wrap);
+  $('#password-form').addEventListener('submit', handleChangePassword);
+}
+
+async function handleChangePassword(e) {
+  e.preventDefault();
+  const current = $('#pw-current').value;
+  const next = $('#pw-new').value;
+  const confirm = $('#pw-new-confirm').value;
+  const errorEl = $('#pw-error');
+  errorEl.textContent = '';
+
+  if (next.length < 6) { errorEl.textContent = '새 비밀번호는 6자 이상이어야 합니다.'; return; }
+  if (next !== confirm) { errorEl.textContent = '새 비밀번호가 서로 다릅니다.'; return; }
+
+  const saltB64 = localStorage.getItem(LS_SALT);
+  try {
+    const currentKey = await deriveKey(current, saltB64);
+    const raw = JSON.parse(localStorage.getItem(LS_VAULT));
+    await decryptJSON(currentKey, raw.iv, raw.ct);
+  } catch (err) {
+    errorEl.textContent = '현재 비밀번호가 올바르지 않습니다.';
+    return;
+  }
+
+  const newSalt = crypto.getRandomValues(new Uint8Array(16));
+  const newSaltB64 = bufToB64(newSalt);
+  state.key = await deriveKey(next, newSaltB64);
+  localStorage.setItem(LS_SALT, newSaltB64);
+  await persistVault();
+  toast('마스터 비밀번호를 변경했습니다');
+  $('#pw-current').value = '';
+  $('#pw-new').value = '';
+  $('#pw-new-confirm').value = '';
+}
+
 /* ---------------- help / guide ---------------- */
 
 function renderHelpPanel() {
@@ -733,6 +802,7 @@ function renderHelpPanel() {
       <div class="guide-step"><span class="num">2</span><div class="body"><b>다시 접속(잠금 해제)</b> — 이미 금고가 있는 상태로 다시 접속하면 "다시 오셨네요" 화면이 뜹니다. 마스터 비밀번호만 입력하면 잠금이 풀립니다.</div></div>
       <div class="guide-step"><span class="num">3</span><div class="body"><b>잠그기</b> — 상단 오른쪽의 자물쇠 아이콘을 누르면 즉시 잠깁니다. 창을 닫거나 새로고침해도 자동으로 잠긴 상태로 시작합니다.</div></div>
       <div class="guide-step"><span class="num">4</span><div class="body"><b>지인과 공유하기</b> — 이 웹 주소를 그대로 전달하면 됩니다. 각자 접속한 브라우저마다 독립된 금고가 만들어지므로 데이터가 서로 섞이지 않습니다. <b>카카오톡 등 메신저로 html 파일 자체를 보내는 건 권장하지 않습니다</b> — 스크립트 포함 파일이라 메신저에서 정상적으로 안 열리는 경우가 많습니다. 주소 링크로 공유해주세요.</div></div>
+      <div class="guide-step"><span class="num">5</span><div class="body"><b>마스터 비밀번호 변경</b> — 사이드바의 "비밀번호 변경" 메뉴에서 현재 비밀번호를 확인한 뒤 새 비밀번호(6자 이상)로 바꿀 수 있습니다. 변경 즉시 저장된 금고 전체가 새 비밀번호로 다시 암호화됩니다.</div></div>
       <div class="guide-note warn">마스터 비밀번호를 잊으면 <b>복구할 방법이 없습니다.</b> 서버에 사본이 없기 때문에 비밀번호 재설정 기능 자체가 존재하지 않아요. 잊지 않을 곳에 따로 기록해두시길 권합니다.</div>
     </div>
 
