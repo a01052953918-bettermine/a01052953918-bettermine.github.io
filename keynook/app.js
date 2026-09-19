@@ -732,6 +732,7 @@ function renderHelpPanel() {
       <div class="guide-step"><span class="num">1</span><div class="body"><b>금고 만들기</b> — 처음 접속하면 "마스터 비밀번호 설정" 화면이 뜹니다. 비밀번호를 두 번 입력하면 그 비밀번호로 암호화된 빈 금고가 이 브라우저에 만들어집니다.</div></div>
       <div class="guide-step"><span class="num">2</span><div class="body"><b>다시 접속(잠금 해제)</b> — 이미 금고가 있는 상태로 다시 접속하면 "다시 오셨네요" 화면이 뜹니다. 마스터 비밀번호만 입력하면 잠금이 풀립니다.</div></div>
       <div class="guide-step"><span class="num">3</span><div class="body"><b>잠그기</b> — 상단 오른쪽의 자물쇠 아이콘을 누르면 즉시 잠깁니다. 창을 닫거나 새로고침해도 자동으로 잠긴 상태로 시작합니다.</div></div>
+      <div class="guide-step"><span class="num">4</span><div class="body"><b>지인과 공유하기</b> — 이 웹 주소를 그대로 전달하면 됩니다. 각자 접속한 브라우저마다 독립된 금고가 만들어지므로 데이터가 서로 섞이지 않습니다. <b>카카오톡 등 메신저로 html 파일 자체를 보내는 건 권장하지 않습니다</b> — 스크립트 포함 파일이라 메신저에서 정상적으로 안 열리는 경우가 많습니다. 주소 링크로 공유해주세요.</div></div>
       <div class="guide-note warn">마스터 비밀번호를 잊으면 <b>복구할 방법이 없습니다.</b> 서버에 사본이 없기 때문에 비밀번호 재설정 기능 자체가 존재하지 않아요. 잊지 않을 곳에 따로 기록해두시길 권합니다.</div>
     </div>
 
@@ -789,7 +790,8 @@ function renderHelpPanel() {
       <h3><span class="n">07</span>보안 원칙 · 주의사항</h3>
       <div class="guide-step"><span class="num">1</span><div class="body">마스터 비밀번호로부터 PBKDF2(20만 회)로 키를 만들고, AES-GCM으로 전체 데이터를 암호화해 이 브라우저에만 저장합니다. 서버는 존재하지 않습니다.</div></div>
       <div class="guide-step"><span class="num">2</span><div class="body">"금융·정부" 카테고리는 실제 인증수단을 저장하지 않고 위치만 기록하도록 설계했습니다 — 대리 로그인·대리 거래는 이 서비스의 범위 밖입니다.</div></div>
-      <div class="guide-step"><span class="num">3</span><div class="body">브라우저의 저장소(localStorage)를 지우거나 브라우저를 재설치하면 백업해두지 않은 데이터는 사라집니다. 정기적으로 내보내기를 해두는 걸 권장합니다.</div></div>
+      <div class="guide-step"><span class="num">3</span><div class="body"><b>컴퓨터를 껐다 켜거나 "잠그기"(로그아웃)를 해도 데이터는 그대로 남습니다.</b> 잠그기는 화면을 잠글 뿐 저장된 데이터를 지우는 동작이 아니며, 저장 데이터 자체는 브라우저를 완전히 껐다 켜도(=컴퓨터 재부팅) 유지되도록 실제로 재현 테스트해 확인했습니다.</div></div>
+      <div class="guide-step"><span class="num">4</span><div class="body">다만 <b>브라우저에서 "인터넷 사용 기록 삭제" 시 "쿠키 및 사이트 데이터"까지 함께 지우거나</b>, 브라우저 자체를 재설치·초기화하면 백업해두지 않은 데이터는 사라집니다. 정기적으로 내보내기를 해두는 걸 권장합니다.</div></div>
       <div class="guide-note warn">이 앱은 <b>정식 보안 감사를 거치지 않은 프로토타입</b>입니다. 개인 테스트 용도로는 괜찮지만, 실제로 중요한 비밀번호를 넣고 다른 사람에게 사용을 권하기 전에는 정식 보안 검토가 필요합니다.</div>
     </div>
   `;
