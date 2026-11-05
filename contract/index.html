@@ -29,7 +29,7 @@
         </div>
         <span class="font-bold text-base text-slate-900">1분 근로계약서</span>
         <span class="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">2026 노무기준</span>
-        <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">v1.0.5</span>
+        <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">v1.0.6</span>
       </div>
       <div class="flex items-center space-x-1">
         <button id="navCreateBtn" onclick="switchView('create')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition">
@@ -90,6 +90,30 @@
               <input type="tel" id="workerPhone" value="010-1234-5678" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition" placeholder="010-0000-0000">
             </div>
           </div>
+          <!-- 사업장 규모 (근로기준법 가산수당 기준) -->
+          <div class="pt-2">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-medium text-slate-600">사업장 규모 (근로기준법 제11조·제56조)</label>
+              <span id="scaleStatusBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">5인 미만 (가산수당 면제)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <label class="flex items-center p-2.5 bg-slate-50 border border-blue-500 rounded-xl cursor-pointer hover:bg-slate-100" id="labelScaleUnder5">
+                <input type="radio" name="workplaceScale" value="UNDER_5" checked class="text-blue-600 focus:ring-blue-500">
+                <div class="ml-2">
+                  <div class="font-bold text-slate-800">5인 미만 사업장</div>
+                  <div class="text-[10px] text-slate-500">대다수 소상공인 / 야간·주말 가산 없음</div>
+                </div>
+              </label>
+              <label class="flex items-center p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100" id="labelScaleOver5">
+                <input type="radio" name="workplaceScale" value="OVER_5" class="text-blue-600 focus:ring-blue-500">
+                <div class="ml-2">
+                  <div class="font-bold text-slate-800">5인 이상 사업장</div>
+                  <div class="text-[10px] text-slate-500">22~06시 야간 50% 가산 의무</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
         </div>
 
         <hr class="border-slate-100">
@@ -117,6 +141,11 @@
               <button type="button" data-day="SUN" class="day-btn py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-600 transition">일</button>
             </div>
           </div>
+          <!-- 주말 근무 안내 배너 -->
+          <div id="weekendNotice" class="hidden p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 leading-relaxed">
+            <span class="font-bold">📅 주말 근무:</span> 약정된 소정근로일이므로 휴일가산(1.5배) 없이 기본시급이 적용됩니다. (주 15시간 이상 시 주휴수당은 정상 지급)
+          </div>
+
 
           <!-- 시간 피커 -->
           <div class="grid grid-cols-3 gap-2">
@@ -136,6 +165,10 @@
           <p id="breakRecommendation" class="text-[11px] text-slate-400">
             * 4시간 이상 30분, 8시간 이상 1시간 휴게시간이 법정 의무입니다.
           </p>
+          <div id="nightWorkNotice" class="hidden p-2.5 rounded-xl text-[11px] leading-relaxed">
+            <!-- Dynamic night work notice -->
+          </div>
+
         </div>
 
         <hr class="border-slate-100">
@@ -228,6 +261,13 @@
             </div>
           </div>
 
+          
+          <!-- 야간 가산수당 카드 (5인 이상 및 야간근로 포함 시 표시) -->
+          <div id="cardNightAllowance" class="hidden bg-indigo-50 border border-indigo-200 p-2.5 rounded-xl text-xs flex items-center justify-between">
+            <span class="text-indigo-900 font-medium" id="lblNightDesc">🌙 야간근로 가산 (22:00~06:00 0시간)</span>
+            <span class="font-bold text-indigo-700" id="valNightAllowance">+0원 / 일</span>
+          </div>
+
           <!-- 실지급 시급 표시 카드 (별도 vs 포함 반영) -->
           <div id="cardHourlyWageSummary" class="bg-white p-2.5 rounded-xl border border-blue-100 text-xs flex items-center justify-between">
             <span class="text-slate-500 text-[11px] font-medium" id="lblWageType">적용 시급 구분: 기본시급 (주휴 별도)</span>
@@ -296,8 +336,10 @@
             <strong class="text-slate-900 font-semibold">3. 근로일 및 근로시간 :</strong>
             <ul class="list-disc list-inside ml-2 mt-1 space-y-0.5 text-slate-700">
               <li>근무 요일: <span id="docWorkDays" class="font-bold text-blue-700">월, 수, 금 (주 3일)</span></li>
-              <li>근로 시간: <span id="docWorkHours" class="font-bold">09:00 ~ 15:00</span> (일 <span id="docDailyHours">5.5</span>시간, 휴게 <span id="docBreakTime">30</span>분)</li>
-              <li>주 소정근로시간: <span id="docWeeklyHours" class="font-bold text-blue-700">16.5시간</span></li>
+              <li>근로 시간: <span id="docWorkHours" class="font-bold">09:00 ~ 15:00</span> (일 <span id="docDailyHours">5.5</span>시간)</li>
+              <li>휴게 시간: 근로시간 중 <span id="docBreakTime" class="font-bold text-blue-700">30</span>분 (근로기준법 제54조 준수)</li>
+              <li>주 소정근로시간: <span id="docWeeklyHours" class="font-bold text-blue-700">16.5시간</span> (주휴일: <span id="docRestDay">매주 일요일</span>)</li>
+              <li id="docWeekendClause" class="hidden text-amber-700 font-medium">주말(토/일) 근로는 약정된 소정근로일로서 평일과 동일한 시급 적용</li>
             </ul>
           </div>
           <div>
@@ -305,6 +347,7 @@
             <ul class="list-disc list-inside ml-2 mt-1 space-y-0.5 text-slate-700">
               <li><span id="docWageLabel" class="font-semibold text-slate-900">기본 시급 :</span> <span id="docHourlyWage" class="font-bold text-slate-900">10,320원</span></li>
               <li>주휴수당 : <span id="docHolidayPayClause">주 15시간 이상 근무 시 주당 3.3시간분의 법정 주휴수당 별도 산정 지급</span></li>
+              <li id="docNightClause" class="hidden text-indigo-700 font-medium">야간근로 가산수당 : <span id="docNightText">22:00~06:00 야간근무에 대해 50% 가산수당 지급</span></li>
               <li>임금 지급일: 매월 말일 (근로자 명의 계좌 입금)</li>
             </ul>
           </div>
@@ -503,6 +546,25 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+
+    // 22:00 ~ 익일 06:00 사이 야간근로 분 계산 함수
+    function getNightWorkMinutes(start, end) {
+      const [sH, sM] = start.split(':').map(Number);
+      const [eH, eM] = end.split(':').map(Number);
+      let sMin = sH * 60 + sM;
+      let eMin = eH * 60 + eM;
+      if (eMin < sMin) eMin += 24 * 60;
+
+      let nightMin = 0;
+      for (let m = sMin; m < eMin; m++) {
+        const tod = m % 1440;
+        if (tod >= 1320 || tod < 360) {
+          nightMin++;
+        }
+      }
+      return nightMin;
+    }
+
     // Day Selector Chips
     function initDaySelector() {
       const container = document.getElementById('daySelector');
@@ -608,6 +670,7 @@
       const start = document.getElementById('startTime').value;
       const end = document.getElementById('endTime').value;
       const breakMins = parseInt(document.getElementById('breakMinutes').value, 10) || 0;
+      const scale = document.querySelector('input[name="workplaceScale"]:checked')?.value || 'UNDER_5';
 
       const [sH, sM] = start.split(':').map(Number);
       const [eH, eM] = end.split(':').map(Number);
@@ -619,11 +682,34 @@
       const daysCount = selectedDays.length;
       const weeklyHours = dailyHours * daysCount;
 
+      // 주휴수당 (5인 미만/이상 모두 동일 의무)
       const isHolidayPayEligible = weeklyHours >= 15;
       const holidayHours = isHolidayPayEligible ? Math.min(8, (weeklyHours / 40) * 8) : 0;
       const holidayRatio = (isHolidayPayEligible && weeklyHours > 0) ? (holidayHours / weeklyHours) : 0;
 
-      return { dailyHours, daysCount, weeklyHours, holidayHours, isHolidayPayEligible, holidayRatio };
+      // 야간근로 (22:00 ~ 06:00) 계산
+      const grossNightMins = getNightWorkMinutes(start, end);
+      const breakRatio = grossMinutes > 0 ? (netMinutes / grossMinutes) : 1;
+      const netNightMins = Math.round(grossNightMins * breakRatio);
+      const dailyNightHours = netNightMins / 60;
+      const isNightWorkPresent = dailyNightHours > 0;
+
+      // 주말 근무 여부
+      const hasWeekend = selectedDays.includes('SAT') || selectedDays.includes('SUN');
+
+      return { 
+        dailyHours, 
+        daysCount, 
+        weeklyHours, 
+        holidayHours, 
+        isHolidayPayEligible, 
+        holidayRatio,
+        scale,
+        dailyNightHours,
+        isNightWorkPresent,
+        hasWeekend,
+        grossHours: (grossMinutes / 60)
+      };
     }
 
     // Handler for radio button switch (시급 외 별도 vs 주휴수당 포함)
@@ -670,6 +756,28 @@
       const currentInputVal = parseInt(wageInput.value, 10) || 0;
       const option = document.querySelector('input[name="holidayPayOption"]:checked')?.value || 'SEPARATE';
 
+      // 1. 사업장 규모 배지 및 상태 갱신
+      const scaleBadge = document.getElementById('scaleStatusBadge');
+      if (scaleBadge) {
+        if (metrics.scale === 'UNDER_5') {
+          scaleBadge.textContent = '5인 미만 (가산수당 면제)';
+          scaleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700';
+        } else {
+          scaleBadge.textContent = '5인 이상 (야간 50% 가산 의무)';
+          scaleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700';
+        }
+      }
+
+      // 2. 주말 근무 안내 배너 갱신
+      const weekendNotice = document.getElementById('weekendNotice');
+      if (weekendNotice) {
+        if (metrics.hasWeekend) {
+          weekendNotice.classList.remove('hidden');
+        } else {
+          weekendNotice.classList.add('hidden');
+        }
+      }
+
       let baseWage, effectiveHourlyWage, holidayPayPerHour;
 
       if (option === 'INCLUDED') {
@@ -700,9 +808,50 @@
         warning.classList.add('hidden');
       }
 
-      // Monthly estimation (4.345 weeks/month)
+      // 야간수당 계산 (5인 이상 사업장만 50% 가산)
+      let nightPayPerHour = 0;
+      let dailyNightAllowance = 0;
+      let weeklyNightAllowance = 0;
+
+      if (metrics.isNightWorkPresent && metrics.scale === 'OVER_5') {
+        nightPayPerHour = Math.round(baseWage * 0.5);
+        dailyNightAllowance = Math.round(metrics.dailyNightHours * nightPayPerHour);
+        weeklyNightAllowance = dailyNightAllowance * metrics.daysCount;
+      }
+
+      // 야간근무 안내 배너 갱신
+      const nightNotice = document.getElementById('nightWorkNotice');
+      if (nightNotice) {
+        if (metrics.isNightWorkPresent) {
+          nightNotice.classList.remove('hidden');
+          if (metrics.scale === 'OVER_5') {
+            nightNotice.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed bg-indigo-50 border border-indigo-200 text-indigo-900';
+            nightNotice.innerHTML = `<strong>🌙 야간근무(22~06시) ${metrics.dailyNightHours.toFixed(1)}시간:</strong> 5인 이상 사업장이므로 근로기준법 제56조에 따라 야간수당 50%(시간당 +${nightPayPerHour.toLocaleString()}원)가 급여에 자동 합산됩니다.`;
+          } else {
+            nightNotice.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed bg-slate-100 border border-slate-200 text-slate-700';
+            nightNotice.innerHTML = `<strong>ℹ️ 야간근무(22~06시) ${metrics.dailyNightHours.toFixed(1)}시간:</strong> 상시 5인 미만 사업장이므로 법정 가산수당(50%) 지급 의무가 없습니다. (기본시급 지급)`;
+          }
+        } else {
+          nightNotice.classList.add('hidden');
+        }
+      }
+
+      // 야간수당 카드 표시 갱신
+      const nightCard = document.getElementById('cardNightAllowance');
+      if (nightCard) {
+        if (metrics.isNightWorkPresent && metrics.scale === 'OVER_5') {
+          nightCard.classList.remove('hidden');
+          document.getElementById('lblNightDesc').textContent = `🌙 야간근로 가산수당 (일 ${metrics.dailyNightHours.toFixed(1)}시간)`;
+          document.getElementById('valNightAllowance').textContent = `+${dailyNightAllowance.toLocaleString()}원 / 일`;
+        } else {
+          nightCard.classList.add('hidden');
+        }
+      }
+
+      // Monthly estimation (4.345 weeks/month, 기본급 + 주휴수당 + 야간가산)
       const monthlyWorkHours = metrics.weeklyHours * 4.345;
-      const totalMonthlyPay = Math.round(monthlyWorkHours * effectiveHourlyWage);
+      const baseMonthlyPay = Math.round(monthlyWorkHours * effectiveHourlyWage);
+      const totalMonthlyPay = baseMonthlyPay + Math.round(weeklyNightAllowance * 4.345);
 
       // Render cards
       document.getElementById('calcDays').textContent = `${metrics.daysCount}일 (${selectedDays.map(d => DAY_MAP[d]).join(', ')})`;
@@ -788,6 +937,9 @@
       document.querySelectorAll('input[name="holidayPayOption"]').forEach(el => {
         el.addEventListener('change', (e) => handleHolidayOptionChange(e.target.value));
       });
+      document.querySelectorAll('input[name="workplaceScale"]').forEach(el => {
+        el.addEventListener('change', () => recalcLaborTerms());
+      });
     }
 
     // Step 1 -> Step 2: Create Contract & Proceed to Sign
@@ -832,6 +984,29 @@
       document.getElementById('docDailyHours').textContent = currentContract.dailyHours;
       document.getElementById('docBreakTime').textContent = breakMins;
       document.getElementById('docWeeklyHours').textContent = `${currentContract.weeklyHours}시간`;
+
+      // 주말 및 야간 조항 처리
+      const weekendEl = document.getElementById('docWeekendClause');
+      if (weekendEl) {
+        if (selectedDays.includes('SAT') || selectedDays.includes('SUN')) {
+          weekendEl.classList.remove('hidden');
+        } else {
+          weekendEl.classList.add('hidden');
+        }
+      }
+
+      const nightEl = document.getElementById('docNightClause');
+      if (nightEl) {
+        const metrics = getTimeMetrics();
+        if (metrics.isNightWorkPresent && metrics.scale === 'OVER_5') {
+          nightEl.classList.remove('hidden');
+          const nightPay = Math.round(terms.baseWage * 0.5);
+          document.getElementById('docNightText').textContent = 
+            `야간근로(22~06시) ${metrics.dailyNightHours.toFixed(1)}시간에 대해 50% 가산수당(시간당 +${nightPay.toLocaleString()}원) 합산 지급`;
+        } else {
+          nightEl.classList.add('hidden');
+        }
+      }
 
       if (option === 'INCLUDED' && terms.isHolidayPayEligible) {
         document.getElementById('docWageLabel').textContent = '지급 시급 :';
