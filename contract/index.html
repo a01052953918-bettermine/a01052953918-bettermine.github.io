@@ -29,7 +29,7 @@
         </div>
         <span class="font-bold text-base text-slate-900">1분 근로계약서</span>
         <span class="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">2026 노무기준</span>
-        <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">v1.0.4</span>
+        <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">v1.0.5</span>
       </div>
       <div class="flex items-center space-x-1">
         <button id="navCreateBtn" onclick="switchView('create')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition">
@@ -537,10 +537,10 @@
       const grossHours = grossMinutes / 60;
       if (grossHours < 4) {
         return 0; // 4시간 미만: 법정 의무 없음
-      } else if (grossHours < 8.5) {
-        return 30; // 4시간 이상 ~ 8시간대 근무: 법정 30분 이상
+      } else if (grossHours < 8) {
+        return 30; // 4시간 이상 ~ 8시간 미만: 법정 30분 이상
       } else {
-        return 60; // 8.5시간 이상 근무: 법정 1시간 이상
+        return 60; // 8시간 이상 (09:00~17:00 8시간, 09:00~18:00 9시간 체류 등): 법정 1시간(60분) 이상
       }
     }
 
