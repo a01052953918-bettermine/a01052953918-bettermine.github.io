@@ -29,7 +29,7 @@
         </div>
         <span class="font-bold text-base text-slate-900">1분 근로계약서</span>
         <span class="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">2026 노무기준</span>
-        <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">v1.0.3</span>
+        <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">v1.0.4</span>
       </div>
       <div class="flex items-center space-x-1">
         <button id="navCreateBtn" onclick="switchView('create')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition">
@@ -470,7 +470,7 @@
       initDaySelector();
       initSignaturePad();
       setupFormListeners();
-      recalcLaborTerms();
+      handleWorkTimeChange();
       updateDashboardCount();
     });
 
@@ -530,6 +530,77 @@
         }
         recalcLaborTerms();
       });
+    }
+
+    // Legal Break Minutes Calculation (근로기준법 제54조 기준)
+    function getLegalBreakMinutes(grossMinutes) {
+      const grossHours = grossMinutes / 60;
+      if (grossHours < 4) {
+        return 0; // 4시간 미만: 법정 의무 없음
+      } else if (grossHours < 8.5) {
+        return 30; // 4시간 이상 ~ 8시간대 근무: 법정 30분 이상
+      } else {
+        return 60; // 8.5시간 이상 근무: 법정 1시간 이상
+      }
+    }
+
+    // Handler when startTime or endTime changes (휴게시간 자동 산정)
+    function handleWorkTimeChange() {
+      const start = document.getElementById('startTime').value;
+      const end = document.getElementById('endTime').value;
+      const [sH, sM] = start.split(':').map(Number);
+      const [eH, eM] = end.split(':').map(Number);
+      let grossMinutes = (eH * 60 + eM) - (sH * 60 + sM);
+      if (grossMinutes < 0) grossMinutes += 24 * 60;
+
+      const autoBreak = getLegalBreakMinutes(grossMinutes);
+      document.getElementById('breakMinutes').value = autoBreak;
+
+      const recEl = document.getElementById('breakRecommendation');
+      const grossHours = (grossMinutes / 60).toFixed(1);
+      if (autoBreak === 0) {
+        recEl.innerHTML = `<span class="text-slate-500 font-medium">⏱ 총 체류 ${grossHours}시간 (4시간 미만으로 법정 휴게시간 의무 없음)</span>`;
+      } else if (autoBreak === 30) {
+        recEl.innerHTML = `<span class="text-blue-600 font-bold">✓ 총 체류 ${grossHours}시간: 근로기준법 제54조에 따라 30분 휴게시간 자동 산정</span>`;
+      } else {
+        recEl.innerHTML = `<span class="text-blue-600 font-bold">✓ 총 체류 ${grossHours}시간: 근로기준법 제54조에 따라 1시간(60분) 휴게시간 자동 산정</span>`;
+      }
+
+      // 근무시간 변경에 따른 주휴 포함 시급 재계산
+      const option = document.querySelector('input[name="holidayPayOption"]:checked')?.value || 'SEPARATE';
+      const metrics = getTimeMetrics();
+      if (option === 'INCLUDED' && metrics.isHolidayPayEligible && metrics.holidayRatio > 0) {
+        document.getElementById('hourlyWage').value = Math.round(baseHourlyWage * (1 + metrics.holidayRatio));
+      }
+      recalcLaborTerms();
+    }
+
+    // Handler when user manually modifies breakMinutes input
+    function handleBreakMinutesInput() {
+      const start = document.getElementById('startTime').value;
+      const end = document.getElementById('endTime').value;
+      const [sH, sM] = start.split(':').map(Number);
+      const [eH, eM] = end.split(':').map(Number);
+      let grossMinutes = (eH * 60 + eM) - (sH * 60 + sM);
+      if (grossMinutes < 0) grossMinutes += 24 * 60;
+
+      const userBreak = parseInt(document.getElementById('breakMinutes').value, 10) || 0;
+      const legalMinBreak = getLegalBreakMinutes(grossMinutes);
+      const recEl = document.getElementById('breakRecommendation');
+
+      if (userBreak < legalMinBreak) {
+        recEl.innerHTML = `<span class="text-amber-600 font-bold">⚠️ 법정 기준 미달: 총 체류 ${(grossMinutes / 60).toFixed(1)}시간 시 최소 ${legalMinBreak}분 이상 부여가 근로기준법상 의무입니다.</span>`;
+      } else {
+        recEl.innerHTML = `<span class="text-slate-500 font-medium">* 근로기준법 제54조 준수 (현재 ${userBreak}분 설정)</span>`;
+      }
+
+      // 휴게시간 변경에 따른 주휴 포함 시급 재계산
+      const option = document.querySelector('input[name="holidayPayOption"]:checked')?.value || 'SEPARATE';
+      const metrics = getTimeMetrics();
+      if (option === 'INCLUDED' && metrics.isHolidayPayEligible && metrics.holidayRatio > 0) {
+        document.getElementById('hourlyWage').value = Math.round(baseHourlyWage * (1 + metrics.holidayRatio));
+      }
+      recalcLaborTerms();
     }
 
     // Time Metrics Calculation Helper
@@ -710,16 +781,9 @@
     }
 
     function setupFormListeners() {
-      ['startTime', 'endTime', 'breakMinutes'].forEach(id => {
-        document.getElementById(id).addEventListener('input', () => {
-          const option = document.querySelector('input[name="holidayPayOption"]:checked')?.value || 'SEPARATE';
-          const metrics = getTimeMetrics();
-          if (option === 'INCLUDED' && metrics.isHolidayPayEligible && metrics.holidayRatio > 0) {
-            document.getElementById('hourlyWage').value = Math.round(baseHourlyWage * (1 + metrics.holidayRatio));
-          }
-          recalcLaborTerms();
-        });
-      });
+      document.getElementById('startTime').addEventListener('input', handleWorkTimeChange);
+      document.getElementById('endTime').addEventListener('input', handleWorkTimeChange);
+      document.getElementById('breakMinutes').addEventListener('input', handleBreakMinutesInput);
       document.getElementById('hourlyWage').addEventListener('input', handleHourlyWageInput);
       document.querySelectorAll('input[name="holidayPayOption"]').forEach(el => {
         el.addEventListener('change', (e) => handleHolidayOptionChange(e.target.value));
