@@ -29,7 +29,7 @@
         </div>
         <span class="font-bold text-base text-slate-900">1분 근로계약서</span>
         <span class="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">2026 노무기준</span>
-        <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">v1.0.6</span>
+        <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">v1.0.7</span>
       </div>
       <div class="flex items-center space-x-1">
         <button id="navCreateBtn" onclick="switchView('create')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white transition">
@@ -287,7 +287,7 @@
 
         <!-- Submit Button -->
         <button type="button" onclick="createContractAndProceed()" class="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center space-x-2">
-          <span>계약서 생성 및 모바일 서명 진행</span>
+          <span>계약서 생성 및 대표자 서명 진행</span>
           <span>→</span>
         </button>
 
@@ -295,7 +295,7 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- VIEW 2: 근로자 모바일 서명 화면 (SIGN VIEW) -->
+    <!-- VIEW 2: 순차 서명 화면 (SIGN VIEW: 대표자 1단계 -> 알바생 2단계) -->
     <!-- ========================================== -->
     <section id="viewSign" class="hidden space-y-4">
       
@@ -304,9 +304,14 @@
         <button onclick="switchView('create')" class="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1">
           ← 작성 화면으로 돌아가기
         </button>
-        <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
-          전자서명 대기
+        <span id="signStepBadge" class="text-xs bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full font-bold">
+          1단계: 사업주(대표자) 서명
         </span>
+      </div>
+
+      <!-- 안내 배너 -->
+      <div id="signStepBanner" class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed font-medium">
+        🖋️ <strong>대표자 서명 단계:</strong> 허대영 대표님의 서명 또는 직인을 먼저 입력하신 후 알바생에게 서명 요청을 발송합니다.
       </div>
 
       <!-- Contract Document Card (고용노동부 표준 단시간 근로계약서 양식) -->
@@ -359,15 +364,18 @@
 
         <!-- Party Signatures Box -->
         <div class="pt-2 grid grid-cols-2 gap-3 text-[11px]">
-          <div class="border border-slate-200 rounded-xl p-3 bg-white">
+          <div class="border border-slate-200 rounded-xl p-3 bg-white" id="boxOwnerSign">
             <div class="font-bold text-slate-700 mb-1">[사업주]</div>
             <div>상호: <span id="docSignBiz">부리또인 강원대점</span></div>
-            <div>대표: <span id="docSignOwner">허대영</span> (인)</div>
+            <div>대표: <span id="docSignOwner">허대영</span></div>
+            <div id="docSignOwnerArea" class="mt-1 text-blue-600 font-semibold text-[10px] flex items-center gap-1">
+              <span>(서명 대기)</span>
+            </div>
           </div>
-          <div class="border border-blue-200 rounded-xl p-3 bg-blue-50/50">
-            <div class="font-bold text-blue-800 mb-1">[근로자 서명]</div>
+          <div class="border border-slate-200 rounded-xl p-3 bg-white" id="boxWorkerSign">
+            <div class="font-bold text-slate-700 mb-1">[근로자]</div>
             <div>성명: <span id="docSignWorker">김민수</span></div>
-            <div class="text-slate-400 mt-1" id="docSignStatusText">아래 서명란에 직접 서명</div>
+            <div id="docSignStatusText" class="mt-1 text-slate-400 text-[10px]">대표자 서명 후 서명 요청 예정</div>
           </div>
         </div>
 
@@ -378,8 +386,8 @@
         
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-sm font-bold text-slate-900">근로자 전자서명</h3>
-            <p class="text-[11px] text-slate-400">손가락 또는 펜으로 네모 박스 안에 정자로 서명해 주세요.</p>
+            <h3 id="signPadTitle" class="text-sm font-bold text-slate-900">대표자(사업주) 전자서명</h3>
+            <p id="signPadDesc" class="text-[11px] text-slate-400">대표자 서명 또는 직인을 네모 박스 안에 입력해 주세요.</p>
           </div>
           <button type="button" onclick="clearSignatureCanvas()" class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 rounded-lg">
             지우기
@@ -397,14 +405,51 @@
         <!-- Consent Checkbox -->
         <label class="flex items-start space-x-2 text-xs text-slate-700 cursor-pointer select-none">
           <input type="checkbox" id="consentCheckbox" class="mt-0.5 text-blue-600 rounded focus:ring-blue-500">
-          <span>본인은 상기 근로계약서 내용을 모두 확인하였으며, 전자서명을 통해 계약 체결에 동의합니다.</span>
+          <span id="consentText">본인은 위 근로조건으로 근로계약 체결을 승인하며 전자서명합니다.</span>
         </label>
 
-        <!-- Final Sign Button -->
-        <button type="button" onclick="completeSignature()" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center space-x-2">
-          <span>✓ 서명 완료 및 계약서 체결하기</span>
+        <!-- Dynamic Sign Button -->
+        <button type="button" id="btnSignSubmit" onclick="handleSignatureSubmit()" class="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center space-x-2">
+          <span id="btnSignSubmitText">✓ 대표자 서명 완료 및 알바생 서명 요청하기 →</span>
         </button>
 
+      </div>
+
+      <!-- Share / Delivery Modal (대표자 서명 완료 시 팝업) -->
+      <div id="modalShareWorker" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+          <div class="text-center space-y-1.5">
+            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto text-xl font-bold">
+              🎉
+            </div>
+            <h3 class="text-base font-extrabold text-slate-900">대표자 서명이 완료되었습니다!</h3>
+            <p class="text-xs text-slate-500">
+              알바생(<span id="modalWorkerName" class="font-bold text-slate-800">김민수</span> 님)에게 서명 요청을 전달해 주세요.
+            </p>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+            <div class="text-[11px] font-semibold text-slate-600">서명 요청 링크:</div>
+            <div class="flex items-center gap-1.5">
+              <input type="text" id="shareLinkInput" readonly class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-600 outline-none select-all font-mono">
+              <button onclick="copyWorkerSignLink()" class="px-2.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shrink-0">
+                복사
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <button onclick="shareViaKakao()" class="w-full py-3 px-3 bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+              <span>💬 카카오톡으로 서명 링크 전달하기</span>
+            </button>
+            <button onclick="proceedToWorkerSigning()" class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+              <span>🤝 [현장 대면] 알바생에게 폰 건네주고 바로 서명받기</span>
+            </button>
+            <button onclick="closeShareModalAndGoDashboard()" class="w-full py-2 text-center text-xs text-slate-500 hover:text-slate-800 font-medium">
+              나중에 알바생 서명받기 (보관함 저장)
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -498,6 +543,7 @@
     const MIN_WAGE_2026 = 10320;
     let baseHourlyWage = 10320; // 약정 기본 시급 (기준값)
     let currentContract = null;
+    let signingStep = 'owner'; // 'owner' | 'worker'
     let selectedDays = ['MON', 'WED', 'FRI'];
     let signatureCanvas, signatureCtx;
     let isDrawing = false;
@@ -943,6 +989,7 @@
     }
 
     // Step 1 -> Step 2: Create Contract & Proceed to Sign
+    // Step 1: Create Contract & Proceed to OWNER Signing
     function createContractAndProceed() {
       const terms = recalcLaborTerms();
       const bizName = document.getElementById('bizName').value.trim() || '부리또인 강원대점';
@@ -973,7 +1020,8 @@
         holidayHours: terms.holidayHours.toFixed(1),
         totalMonthlyPay: terms.totalMonthlyPay,
         holidayPayOption: option,
-        createdAt: new Date().toLocaleDateString('ko-KR')
+        createdAt: new Date().toLocaleDateString('ko-KR'),
+        status: 'AWAITING_OWNER'
       };
 
       // Populate Document Preview
@@ -1031,8 +1079,46 @@
       document.getElementById('docSignOwner').textContent = ownerName;
       document.getElementById('docSignWorker').textContent = workerName;
 
+      // 1단계: 대표자 서명 모드로 초기화
+      setupSigningMode('owner');
       switchView('sign');
-      showToast('계약서가 준비되었습니다. 아래 서명란에 서명해 주세요.');
+      showToast('1단계: 대표자(사업주) 서명을 먼저 진행해 주세요.');
+    }
+
+    function setupSigningMode(role) {
+      signingStep = role;
+      const stepBadge = document.getElementById('signStepBadge');
+      const stepBanner = document.getElementById('signStepBanner');
+      const padTitle = document.getElementById('signPadTitle');
+      const padDesc = document.getElementById('signPadDesc');
+      const consentText = document.getElementById('consentText');
+      const btnSubmit = document.getElementById('btnSignSubmit');
+      const btnSubmitText = document.getElementById('btnSignSubmitText');
+      const consentBox = document.getElementById('consentCheckbox');
+      consentBox.checked = false;
+
+      if (role === 'owner') {
+        stepBadge.textContent = '1단계: 사업주(대표자) 서명 (1/2)';
+        stepBadge.className = 'text-xs bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full font-bold';
+        stepBanner.className = 'p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed font-medium';
+        stepBanner.innerHTML = `🖋️ <strong>1단계 대표자 서명:</strong> ${currentContract.ownerName} 대표님의 서명 또는 직인을 먼저 입력하신 후 알바생에게 서명 요청을 발송합니다.`;
+        padTitle.textContent = '대표자(사업주) 전자서명';
+        padDesc.textContent = `${currentContract.ownerName} 대표님의 서명 또는 직인을 네모 박스 안에 입력해 주세요.`;
+        consentText.textContent = '본인은 위 근로조건으로 근로계약 체결을 승인하며 전자서명합니다.';
+        btnSubmit.className = 'w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center space-x-2';
+        btnSubmitText.textContent = '✓ 대표자 서명 완료 및 알바생 서명 요청하기 →';
+      } else {
+        stepBadge.textContent = '2단계: 근로자(알바생) 서명 (2/2)';
+        stepBadge.className = 'text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold';
+        stepBanner.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 leading-relaxed font-medium';
+        stepBanner.innerHTML = `✓ <strong>사업주(${currentContract.ownerName} 대표) 서명 완료:</strong> 대표자 서명이 날인된 정식 계약서입니다. 근로조건 확인 후 아래에 서명해 주세요.`;
+        padTitle.textContent = '근로자(알바생) 전자서명';
+        padDesc.textContent = `${currentContract.workerName} 님의 서명을 네모 박스 안에 정자로 입력해 주세요.`;
+        consentText.textContent = '본인은 상기 근로계약서 내용을 모두 확인하였으며, 전자서명을 통해 계약 체결에 동의합니다.';
+        btnSubmit.className = 'w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center space-x-2';
+        btnSubmitText.textContent = '✓ 알바생 서명 완료 및 계약서 최종 체결';
+      }
+      setTimeout(resizeCanvas, 100);
     }
 
     // Touch Signature Pad
@@ -1062,7 +1148,6 @@
         isDrawing = false;
       };
 
-      // Mouse Events
       signatureCanvas.addEventListener('mousedown', (e) => {
         const rect = signatureCanvas.getBoundingClientRect();
         start(e.clientX - rect.left, e.clientY - rect.top);
@@ -1073,7 +1158,6 @@
       });
       window.addEventListener('mouseup', stop);
 
-      // Touch Events for Mobile (with e.preventDefault to prevent scrolling)
       signatureCanvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const rect = signatureCanvas.getBoundingClientRect();
@@ -1109,41 +1193,102 @@
       document.getElementById('signaturePlaceholder').classList.remove('hidden');
     }
 
-    // Complete Signature & Save
-    function completeSignature() {
+    // Handle Current Signature Submit (Owner vs Worker)
+    function handleSignatureSubmit() {
       if (!hasSignature) {
         showToast('서명란에 손가락이나 펜으로 서명해 주세요.');
         return;
       }
       const consent = document.getElementById('consentCheckbox').checked;
       if (!consent) {
-        showToast('근로조건 동의 체크박스에 체크해 주세요.');
+        showToast('서명 동의 체크박스에 체크해 주세요.');
         return;
       }
 
-      // Capture Signature Image
-      const signatureDataUrl = signatureCanvas.toDataURL('image/png');
-      currentContract.signatureDataUrl = signatureDataUrl;
-      currentContract.signedAt = new Date().toISOString();
-      currentContract.auditHash = 'SHA256:' + Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('') + '...OK';
+      const sigData = signatureCanvas.toDataURL('image/png');
 
-      // Update signature in preview document
-      const signStatusText = document.getElementById('docSignStatusText');
-      signStatusText.innerHTML = `<img src="${signatureDataUrl}" class="h-10 mt-1 object-contain" alt="서명">`;
+      if (signingStep === 'owner') {
+        // 1단계 대표자 서명 완료
+        currentContract.ownerSignatureDataUrl = sigData;
+        currentContract.ownerSignedAt = new Date().toISOString();
+        currentContract.status = 'AWAITING_WORKER';
 
-      // Save to localStorage
-      saveContractToStorage(currentContract);
+        // 계약서 미리보기에 대표자 서명 이미지 삽입
+        const ownerArea = document.getElementById('docSignOwnerArea');
+        ownerArea.innerHTML = `<img src="${sigData}" class="h-9 mt-0.5 object-contain" alt="대표자 서명">`;
+        
+        // 근로자 서명란 상태 갱신
+        document.getElementById('docSignStatusText').textContent = '알바생 서명 대기';
 
-      // Populate Done View
-      document.getElementById('auditTimestamp').textContent = new Date().toLocaleString('ko-KR');
-      document.getElementById('auditHash').textContent = currentContract.auditHash;
+        // 임시 저장
+        saveContractToStorage(currentContract);
 
-      switchView('done');
-      showToast('🎉 계약서 체결이 완료되었습니다!');
+        // 공유 모달 띄우기
+        const shareUrl = `${window.location.origin}${window.location.pathname}?v=1.0.7&step=worker&id=${currentContract.id}`;
+        document.getElementById('shareLinkInput').value = shareUrl;
+        document.getElementById('modalWorkerName').textContent = currentContract.workerName;
+        document.getElementById('modalShareWorker').classList.remove('hidden');
+
+        showToast('대표자 서명이 완료되었습니다! 알바생에게 발송해 주세요.');
+      } else {
+        // 2단계 알바생 서명 완료 -> 최종 체결
+        currentContract.workerSignatureDataUrl = sigData;
+        currentContract.signedAt = new Date().toISOString();
+        currentContract.status = 'COMPLETED';
+        currentContract.auditHash = 'SHA256:' + Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('') + '...OK';
+
+        // 계약서 미리보기에 알바생 서명 이미지 삽입
+        const workerArea = document.getElementById('docSignStatusText');
+        workerArea.innerHTML = `<img src="${sigData}" class="h-9 mt-0.5 object-contain" alt="알바생 서명">`;
+
+        // 최종 저장
+        saveContractToStorage(currentContract);
+
+        // Populate Done View
+        document.getElementById('auditTimestamp').textContent = new Date().toLocaleString('ko-KR');
+        document.getElementById('auditHash').textContent = currentContract.auditHash;
+
+        switchView('done');
+        showToast('🎉 양측 서명이 모두 완료되어 계약이 체결되었습니다!');
+      }
     }
 
-    // PDF Download Engine (html2pdf)
-    function downloadContractPDF() {
+    function proceedToWorkerSigning() {
+      document.getElementById('modalShareWorker').classList.add('hidden');
+      setupSigningMode('worker');
+      clearSignatureCanvas();
+      window.scrollTo({ top: document.getElementById('contractDocumentArea').offsetTop, behavior: 'smooth' });
+      showToast('알바생(근로자) 서명 모드로 전환되었습니다.');
+    }
+
+    function copyWorkerSignLink() {
+      const link = document.getElementById('shareLinkInput').value;
+      navigator.clipboard.writeText(link);
+      showToast('알바생 서명 링크가 복사되었습니다! 카카오톡이나 문자로 전송해 주세요.');
+    }
+
+    function shareViaKakao() {
+      const link = document.getElementById('shareLinkInput').value;
+      if (navigator.share) {
+        navigator.share({
+          title: `[${currentContract.bizName}] 근로계약서 서명 요청`,
+          text: `${currentContract.ownerName} 대표님이 근로계약서 서명을 요청하셨습니다. 링크를 눌러 확인하고 서명해 주세요.`,
+          url: link
+        }).catch(err => {
+          copyWorkerSignLink();
+        });
+      } else {
+        copyWorkerSignLink();
+      }
+    }
+
+    function closeShareModalAndGoDashboard() {
+      document.getElementById('modalShareWorker').classList.add('hidden');
+      switchView('dashboard');
+      showToast('대표자 서명본이 보관함에 저장되었습니다.');
+    }
+
+function downloadContractPDF() {
       showToast('PDF 생성을 시작합니다...');
       const element = document.getElementById('contractDocumentArea');
       const opt = {
