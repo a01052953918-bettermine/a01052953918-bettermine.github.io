@@ -179,6 +179,17 @@
               </label>
             </div>
           </div>
+
+          <!-- 주휴수당 포함 시급 안내 배너 (INCLUDED 선택 시 실시간 자동 계산 표시) -->
+          <div id="includedWageInfo" class="hidden p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1.5 text-xs text-emerald-800">
+            <div class="flex items-center justify-between font-bold">
+              <span>💡 주휴수당 포함 실지급 시급:</span>
+              <span id="effectiveHourlyWageDisplay" class="text-sm font-extrabold text-emerald-700">12,384원</span>
+            </div>
+            <p class="text-[11px] text-emerald-600 leading-normal" id="effectiveWageBreakdown">
+              기본시급 10,320원 + 주휴수당분 2,064원 (주 소정근로 16.5시간 기준 주휴가산율 20% 자동 합산)
+            </p>
+          </div>
         </div>
 
         <hr class="border-slate-100">
@@ -211,6 +222,12 @@
               <div class="text-slate-400 text-[10px]">주당 주휴수당 인정시간</div>
               <div id="calcHolidayHours" class="text-sm font-bold text-emerald-600 mt-0.5">3.3시간</div>
             </div>
+          </div>
+
+          <!-- 실지급 시급 표시 카드 (별도 vs 포함 반영) -->
+          <div id="cardHourlyWageSummary" class="bg-white p-2.5 rounded-xl border border-blue-100 text-xs flex items-center justify-between">
+            <span class="text-slate-500 text-[11px] font-medium" id="lblWageType">적용 시급 구분: 기본시급 (주휴 별도)</span>
+            <span class="font-extrabold text-slate-900" id="valWageSummary">10,320원 / 시간</span>
           </div>
 
           <div class="bg-white p-3 rounded-xl border border-blue-200 flex items-center justify-between">
@@ -534,6 +551,11 @@
       const holidayHours = isHolidayPayEligible ? Math.min(8, (weeklyHours / 40) * 8) : 0;
       const weeklyHolidayPay = Math.round(holidayHours * wage);
 
+      // Hourly holiday pay rate & effective wage when included
+      const holidayPayPerHour = (isHolidayPayEligible && weeklyHours > 0) ? Math.round(wage * (holidayHours / weeklyHours)) : 0;
+      const effectiveHourlyWage = wage + holidayPayPerHour;
+      const holidayPayOption = document.querySelector('input[name="holidayPayOption"]:checked')?.value || 'SEPARATE';
+
       // Monthly estimation (4.345 weeks/month)
       const monthlyWorkHours = weeklyHours * 4.345;
       const monthlyHolidayHours = holidayHours * 4.345;
@@ -545,6 +567,36 @@
       document.getElementById('calcWeeklyHours').textContent = `${weeklyHours.toFixed(1)}시간`;
       document.getElementById('calcHolidayHours').textContent = `${holidayHours.toFixed(1)}시간/주`;
       document.getElementById('calcTotalMonthly').textContent = `${totalMonthlyPay.toLocaleString()}원`;
+
+      // Update Included Wage Info Banner
+      const includedBanner = document.getElementById('includedWageInfo');
+      const lblWageType = document.getElementById('lblWageType');
+      const valWageSummary = document.getElementById('valWageSummary');
+
+      if (holidayPayOption === 'INCLUDED') {
+        includedBanner.classList.remove('hidden');
+        if (isHolidayPayEligible) {
+          const ratio = ((holidayHours / weeklyHours) * 100).toFixed(1);
+          document.getElementById('effectiveHourlyWageDisplay').textContent = `${effectiveHourlyWage.toLocaleString()}원`;
+          document.getElementById('effectiveWageBreakdown').textContent = 
+            `기본시급 ${wage.toLocaleString()}원 + 주휴수당분 ${holidayPayPerHour.toLocaleString()}원 (주 소정근로 ${weeklyHours.toFixed(1)}시간 기준 주휴가산율 ${ratio}% 자동 합산)`;
+          lblWageType.textContent = "적용 시급 구분: 주휴수당 포함 시급";
+          valWageSummary.textContent = `${effectiveHourlyWage.toLocaleString()}원 / 시간 (기본 ${wage.toLocaleString()}원 + 주휴 ${holidayPayPerHour.toLocaleString()}원)`;
+          valWageSummary.className = "font-extrabold text-emerald-700";
+        } else {
+          document.getElementById('effectiveHourlyWageDisplay').textContent = `${wage.toLocaleString()}원`;
+          document.getElementById('effectiveWageBreakdown').textContent = 
+            `주 15시간 미만(현재 ${weeklyHours.toFixed(1)}시간)으로 법정 주휴수당 대상이 아닙니다. 약정 시급 그대로 적용됩니다.`;
+          lblWageType.textContent = "적용 시급 구분: 약정 시급 (주 15시간 미만 주휴미해당)";
+          valWageSummary.textContent = `${wage.toLocaleString()}원 / 시간`;
+          valWageSummary.className = "font-extrabold text-slate-900";
+        }
+      } else {
+        includedBanner.classList.add('hidden');
+        lblWageType.textContent = "적용 시급 구분: 기본시급 (주휴 별도 지급)";
+        valWageSummary.textContent = `${wage.toLocaleString()}원 / 시간`;
+        valWageSummary.className = "font-extrabold text-slate-900";
+      }
 
       const badge = document.getElementById('holidayPayBadge');
       if (isHolidayPayEligible) {
@@ -562,8 +614,11 @@
         holidayHours,
         isHolidayPayEligible,
         weeklyHolidayPay,
+        holidayPayPerHour,
+        effectiveHourlyWage,
         totalMonthlyPay,
-        wage
+        wage,
+        holidayPayOption
       };
     }
 
@@ -576,6 +631,9 @@
     function setupFormListeners() {
       ['startTime', 'endTime', 'breakMinutes', 'hourlyWage'].forEach(id => {
         document.getElementById(id).addEventListener('input', recalcLaborTerms);
+      });
+      document.querySelectorAll('input[name="holidayPayOption"]').forEach(el => {
+        el.addEventListener('change', recalcLaborTerms);
       });
     }
 
@@ -619,14 +677,20 @@
       document.getElementById('docDailyHours').textContent = currentContract.dailyHours;
       document.getElementById('docBreakTime').textContent = breakMins;
       document.getElementById('docWeeklyHours').textContent = `${currentContract.weeklyHours}시간`;
-      document.getElementById('docHourlyWage').textContent = `${terms.wage.toLocaleString()}원`;
 
-      if (terms.isHolidayPayEligible) {
+      if (option === 'INCLUDED' && terms.isHolidayPayEligible) {
+        document.getElementById('docHourlyWage').innerHTML = `
+          <strong>${terms.effectiveHourlyWage.toLocaleString()}원</strong> 
+          <span class="text-xs text-emerald-700 font-semibold">(기본시급 ${terms.wage.toLocaleString()}원 + 주휴수당분 ${terms.holidayPayPerHour.toLocaleString()}원 포함)</span>
+        `;
         document.getElementById('docHolidayPayClause').textContent = 
-          option === 'SEPARATE' 
-            ? `주 15시간 이상 근무 시 주당 ${currentContract.holidayHours}시간분의 법정 주휴수당 별도 지급` 
-            : `시급에 주휴수당 반영액 포함 표기 (기본시급 + 주휴수당 산입)`;
+          `주 15시간 이상 근무에 따른 법정 주휴수당(시간당 ${terms.holidayPayPerHour.toLocaleString()}원)이 시급에 합산 포함되어 지급됨 (실지급 총 시급: ${terms.effectiveHourlyWage.toLocaleString()}원)`;
+      } else if (terms.isHolidayPayEligible) {
+        document.getElementById('docHourlyWage').textContent = `${terms.wage.toLocaleString()}원`;
+        document.getElementById('docHolidayPayClause').textContent = 
+          `주 15시간 이상 근무 시 주당 ${currentContract.holidayHours}시간분의 법정 주휴수당 별도 산정 지급`;
       } else {
+        document.getElementById('docHourlyWage').textContent = `${terms.wage.toLocaleString()}원`;
         document.getElementById('docHolidayPayClause').textContent = '주 소정근로시간 15시간 미만으로 주휴수당 미해당';
       }
 
