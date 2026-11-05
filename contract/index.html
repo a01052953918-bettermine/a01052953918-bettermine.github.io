@@ -796,14 +796,6 @@
       showToast('계약서가 준비되었습니다. 아래 서명란에 서명해 주세요.');
     }
 
-      document.getElementById('docSignBiz').textContent = bizName;
-      document.getElementById('docSignOwner').textContent = ownerName;
-      document.getElementById('docSignWorker').textContent = workerName;
-
-      switchView('sign');
-      showToast('계약서가 준비되었습니다. 아래 서명란에 서명해 주세요.');
-    }
-
     // Touch Signature Pad
     function initSignaturePad() {
       signatureCanvas = document.getElementById('signatureCanvas');
