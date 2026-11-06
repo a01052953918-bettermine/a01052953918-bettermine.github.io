@@ -2,7 +2,7 @@ import { DAYS, DAY_LABELS, MIN_WAGE_2026, calculate, baseWageFromIncluded, valid
 import { encodeLink, decodeLink, packStrokes, simplifyStrokes, checkPackedStrokes, fingerprint, SIG_W, SIG_H, hasInk } from './share.js';
 import { renderDocument, esc, won, kst } from './doc.js';
 
-const APP_VERSION = '2.1.3';
+const APP_VERSION = '2.1.4';
 const KEY = 'signpass.contracts.v1';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -301,16 +301,20 @@ ${toOwner ? '<p class="warn">사장님이 이 계약을 보관함에 저장하�
     try { await pdfRun(rec, w => w.save()); toast('PDF를 저장했습니다.'); } catch { toast('PDF 생성에 실패해 인쇄 화면을 엽니다.'); window.print(); }
   };
   $('#copyDone').onclick = () => copyText(link, '서명 완료본 링크를 복사했습니다.');
+  // 공유 창은 버튼을 누른 직후에만 열 수 있어서, PDF는 화면이 뜬 뒤 미리 만들어 둔다(누른 뒤 기다리면 브라우저가 거부함).
+  let pdfFile = null;
+  if (window.html2pdf && navigator.canShare) {
+    setTimeout(() => pdfRun(rec, w => w.outputPdf('blob')).then(b => { pdfFile = new File([b], safeName(rec) + '.pdf', { type: 'application/pdf' }); }).catch(() => {}), 300);
+  }
   $('#sendDone').onclick = async () => {
+    const title = '근로계약서 서명 완료본';
     const text = `[${rec.terms.businessName}] 근로계약서 서명 완료본입니다. 링크를 열면 내용 확인과 보관함 저장이 됩니다.`;
+    const fallback = () => copyText(link, '공유 창을 열 수 없어 링크를 복사했습니다. 카카오톡·문자에 붙여넣어 보내세요.');
+    if (!navigator.share) return fallback();
     try {
-      if (window.html2pdf && navigator.canShare) {
-        const blob = await pdfRun(rec, w => w.outputPdf('blob')), file = new File([blob], safeName(rec) + '.pdf', { type: 'application/pdf' });
-        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: '근로계약서 서명 완료본', text: text + '\n' + link }); return; }
-      }
-      if (navigator.share) await navigator.share({ title: '근로계약서 서명 완료본', text, url: link });
-      else await copyText(link, '공유 기능이 없어 링크를 복사했습니다. 카카오톡에 붙여넣으세요.');
-    } catch { /* 취소 */ }
+      if (pdfFile && navigator.canShare({ files: [pdfFile] })) await navigator.share({ files: [pdfFile], title, text: text + '\n' + link });
+      else await navigator.share({ title, text, url: link });
+    } catch (e) { if (e && e.name !== 'AbortError') await fallback(); }
   };
 }
 
