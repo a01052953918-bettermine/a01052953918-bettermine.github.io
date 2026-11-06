@@ -2,7 +2,7 @@ import { DAYS, DAY_LABELS, MIN_WAGE_2026, calculate, baseWageFromIncluded, valid
 import { encodeLink, decodeLink, packStrokes, simplifyStrokes, checkPackedStrokes, fingerprint, SIG_W, SIG_H, hasInk } from './share.js';
 import { renderDocument, esc, won, kst } from './doc.js';
 
-const APP_VERSION = '2.1.2';
+const APP_VERSION = '2.1.3';
 const KEY = 'signpass.contracts.v1';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -262,16 +262,16 @@ async function svgToPng(svg) {
 }
 async function pdfRun(rec, finish) {
   const host = document.createElement('div');
-  host.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff';
+  host.style.cssText = 'position:absolute;left:0;top:0;z-index:-1;background:#fff';
   const clone = $('#doc').cloneNode(true); clone.removeAttribute('id'); clone.classList.add('pdf');
   for (const svg of clone.querySelectorAll('svg.sig')) {
     const img = document.createElement('img'); img.className = 'sigimg'; img.alt = svg.getAttribute('aria-label') || '서명'; img.src = await svgToPng(svg); svg.replaceWith(img);
   }
-  host.appendChild(clone); document.body.appendChild(host);
+  host.appendChild(clone); document.body.appendChild(host); window.scrollTo(0, 0);
   try {
     await Promise.all([...clone.querySelectorAll('img')].map(i => i.decode ? i.decode() : null));
     const w = window.html2pdf().set({ margin: [14, 12, 14, 12], filename: safeName(rec) + '.pdf', image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, backgroundColor: '#ffffff', windowWidth: 700 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      html2canvas: { scale: 2, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['css', 'legacy'], avoid: ['.clause', '.signblock'] } }).from(clone).toPdf();
     // 모든 쪽에 테두리와 쪽 번호
     await w.get('pdf').then(pdf => {
