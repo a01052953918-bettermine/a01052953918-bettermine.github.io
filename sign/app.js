@@ -1,14 +1,15 @@
 import { DAYS, DAY_LABELS, MIN_WAGE_2026, calculate, baseWageFromIncluded, validateTerms, suggestedBreak, minutesBetween, timeMinutes, toHHMM } from './calc.js';
-import { encodePayload, decodePayload, packStrokes, checkPackedStrokes, fingerprint, SIG_W, SIG_H, hasInk } from './share.js';
+import { encodeLink, decodeLink, packStrokes, simplifyStrokes, checkPackedStrokes, fingerprint, SIG_W, SIG_H, hasInk } from './share.js';
 import { renderDocument, esc, won, kst } from './doc.js';
 
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.1.1';
 const KEY = 'signpass.contracts.v1';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const app = $('#app');
 const baseUrl = () => location.href.split('#')[0];
 const randomHex = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => b.toString(16).padStart(2, '0')).join('');
+const nowIso = () => new Date(Math.floor(Date.now() / 1000) * 1000).toISOString(); // 초 단위로 맞춰 링크를 짧게 유지
 
 let toastTimer;
 function toast(msg) {
@@ -39,21 +40,21 @@ const iso = v => typeof v === 'string' && !isNaN(Date.parse(v)) && v.length <= 4
 const idOk = v => typeof v === 'string' && /^CNT-[0-9a-f]{12}$/.test(v);
 const hex = v => typeof v === 'string' && /^[0-9a-f]{64}$/.test(v);
 async function verifyRequest(p) {
-  if (!p || p.k !== 'req' || !idOk(p.id) || !iso(p.ot) || !hex(p.fp)) return { error: '서명 요청 링크가 올바르지 않습니다.' };
+  if (!p || p.k !== 'req' || !idOk(p.id) || !iso(p.ot) || !(hex(p.fp) || /^[0-9a-f]{8}$/.test(p.chk))) return { error: '서명 요청 링크가 올바르지 않습니다.' };
   const errs = validateTerms(p.terms); if (errs.length) return { error: '계약 내용에 문제가 있습니다: ' + errs[0] };
   const o = checkPackedStrokes(p.os); if (!o) return { error: '사업주 서명을 확인할 수 없습니다.' };
   const fp = await fingerprint({ id: p.id, terms: p.terms, os: p.os, ot: p.ot });
-  if (fp !== p.fp) return { error: '링크가 잘렸거나 내용이 바뀌었습니다. 사업주에게 링크를 다시 받으세요.' };
-  return { rec: { id: p.id, terms: p.terms, os: p.os, ot: p.ot, fp: p.fp }, ownerStrokes: o };
+  if (p.fp ? fp !== p.fp : !fp.startsWith(p.chk)) return { error: '링크가 잘렸거나 내용이 바뀌었습니다. 사업주에게 링크를 다시 받으세요.' };
+  return { rec: { id: p.id, terms: p.terms, os: p.os, ot: p.ot, fp }, ownerStrokes: o };
 }
 async function verifyDone(p) {
-  if (!p || p.k !== 'done' || !idOk(p.id) || !iso(p.ot) || !iso(p.wt) || !hex(p.hash)) return { error: '서명 완료 링크가 올바르지 않습니다.' };
+  if (!p || p.k !== 'done' || !idOk(p.id) || !iso(p.ot) || !iso(p.wt) || !(hex(p.hash) || /^[0-9a-f]{8}$/.test(p.chk))) return { error: '서명 완료 링크가 올바르지 않습니다.' };
   const errs = validateTerms(p.terms); if (errs.length) return { error: '계약 내용에 문제가 있습니다: ' + errs[0] };
   const o = checkPackedStrokes(p.os), w = checkPackedStrokes(p.ws);
   if (!o || !w) return { error: '서명을 확인할 수 없습니다.' };
   const h = await fingerprint({ id: p.id, terms: p.terms, os: p.os, ot: p.ot, ws: p.ws, wt: p.wt });
-  if (h !== p.hash) return { error: '계약 지문이 일치하지 않습니다. 내용이 바뀌었거나 링크가 훼손되었습니다.' };
-  return { rec: { id: p.id, terms: p.terms, os: p.os, ot: p.ot, ws: p.ws, wt: p.wt, hash: p.hash }, ownerStrokes: o, workerStrokes: w };
+  if (p.hash ? h !== p.hash : !h.startsWith(p.chk)) return { error: '계약 지문이 일치하지 않습니다. 내용이 바뀌었거나 링크가 훼손되었습니다.' };
+  return { rec: { id: p.id, terms: p.terms, os: p.os, ot: p.ot, ws: p.ws, wt: p.wt, hash: h }, ownerStrokes: o, workerStrokes: w };
 }
 
 // ---------- 서명 패드 ----------
@@ -138,7 +139,7 @@ ${field('payDay', '임금 지급일', 'text', 'maxlength="80"')}
     if (daily && /^\d{4}-\d{2}-\d{2}$/.test(sd)) workDays = [DAYS[(new Date(sd + 'T00:00:00Z').getUTCDay() + 6) % 7]];
     const included = val('payMode') === 'INCLUDED';
     const t = {
-      businessName: val('businessName'), ownerName: val('ownerName'), ownerPhone: val('ownerPhone'), workerName: val('workerName'), workerPhone: val('workerPhone'),
+      businessName: val('businessName'), ownerName: val('ownerName'), ownerPhone: val('ownerPhone').replace(/[ -]/g, ''), workerName: val('workerName'), workerPhone: val('workerPhone').replace(/[ -]/g, ''),
       workplaceScale: val('workplaceScale'), contractType: val('contractType'), startDate: sd, endDate: daily ? sd : val('endDate'),
       workPlace: val('workPlace'), jobDescription: val('jobDescription'), workDays, startTime: val('startTime'), endTime: val('endTime'),
       breakMinutes: num('breakMinutes'), breakStartTime: val('breakStartTime'), hourlyWage: num('hourlyWage'), holidayPayIncluded: included,
@@ -199,7 +200,7 @@ ${field('payDay', '임금 지급일', 'text', 'maxlength="80"')}
     box.className = ''; box.innerHTML = '';
     $('#submitBtn').disabled = true;
     try {
-      const core = { id: 'CNT-' + randomHex(6), terms: t, os: packStrokes(pad.strokes), ot: new Date().toISOString() };
+      const core = { id: 'CNT-' + randomHex(6), terms: t, os: packStrokes(simplifyStrokes(pad.strokes)), ot: nowIso() };
       const rec = { ...core, fp: await fingerprint(core) };
       store.upsert({ id: rec.id, status: 'PENDING', rec, savedAt: new Date().toISOString() });
       await renderShare(rec);
@@ -208,7 +209,7 @@ ${field('payDay', '임금 지급일', 'text', 'maxlength="80"')}
 }
 
 // ---------- 화면: 링크 전달 ----------
-async function requestLink(rec) { return baseUrl() + '#s=' + await encodePayload({ k: 'req', ...rec }); }
+async function requestLink(rec) { return baseUrl() + '#s=' + await encodeLink('req', rec); }
 async function renderShare(rec) {
   const link = await requestLink(rec), t = rec.terms;
   app.innerHTML = `<section class="card stack"><h1>사업주 서명이 완료되었습니다</h1>
@@ -239,7 +240,7 @@ ${local ? '' : '<p class="muted small">이 계약서는 링크에 담긴 내용 
   $('#consent').onchange = sync;
   $('#signBtn').onclick = async () => {
     $('#signBtn').disabled = true;
-    const core = { id: rec.id, terms: rec.terms, os: rec.os, ot: rec.ot, ws: packStrokes(pad.strokes), wt: new Date().toISOString() };
+    const core = { id: rec.id, terms: rec.terms, os: rec.os, ot: rec.ot, ws: packStrokes(simplifyStrokes(pad.strokes)), wt: nowIso() };
     const done = { ...core, hash: await fingerprint(core) };
     store.upsert({ id: done.id, status: 'SIGNED', rec: done, savedAt: new Date().toISOString() });
     await renderDone(done, local ? 'owner-device' : 'worker');
@@ -255,7 +256,7 @@ function pdfJob(rec) {
 async function renderDone(rec, who) {
   const v = await verifyDone({ k: 'done', ...rec });
   if (v.error) return renderError(v.error);
-  const link = baseUrl() + '#d=' + await encodePayload({ k: 'done', ...rec });
+  const link = baseUrl() + '#d=' + await encodeLink('done', rec);
   const toOwner = who === 'worker';
   app.innerHTML = `<section class="card stack"><h1>서명이 완료되었습니다</h1>
 <p class="note">양측 서명이 끝났고 계약 지문이 일치합니다. 이 기기 보관함에도 저장했습니다.</p>
@@ -343,7 +344,7 @@ async function route() {
   $('#nav').hidden = !!m && m[1] === 's';
   if (!m) { renderCreate(); return; }
   let payload;
-  try { payload = await decodePayload(m[2]); } catch (e) { return renderError(e.message); }
+  try { payload = await decodeLink(m[2]); } catch (e) { return renderError(e.message); }
   if (m[1] === 's') {
     const v = await verifyRequest(payload);
     if (v.error) return renderError(v.error);

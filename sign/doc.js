@@ -2,6 +2,7 @@ import { calculate, DAY_LABELS, timeMinutes, toHHMM } from './calc.js';
 import { strokesToSvg } from './share.js';
 
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const phone = s => String(s).replace(/^(0\d{1,2})(\d{3,4})(\d{4})$/, '$1-$2-$3'); // 표시용: 010-1234-5678
 const won = n => Number(n).toLocaleString('ko-KR') + '원';
 const kst = iso => new Date(iso).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', hour12: false }) + ' (한국시간)';
 
@@ -36,8 +37,8 @@ export function renderDocument({ id, terms: t, ownerStrokes, workerStrokes, ot, 
 <h2>5. 계약서 교부 및 기타</h2>
 <p>사업주는 서명 완료본을 근로자가 내려받아 보관할 수 있도록 교부하고 전달 여부를 확인합니다. 명시하지 않은 사항은 관계 법령과 적법한 취업규칙에 따릅니다. 이 문서는 정부 인증 서식 또는 공인 전자서명 인증서가 아닙니다.</p>
 <div class="signatures">
-<section><h2>사업주</h2><p>${esc(t.businessName)}<br>${esc(t.ownerName)} / ${esc(t.ownerPhone)}</p>${ownerStrokes ? strokesToSvg(ownerStrokes, '사업주 서명') : '<p class="muted">서명 대기</p>'}${ot ? `<p class="muted">서명 시각 ${kst(ot)}</p>` : ''}</section>
-<section><h2>근로자</h2><p>${esc(t.workerName)} / ${esc(t.workerPhone)}</p>${workerStrokes ? strokesToSvg(workerStrokes, '근로자 서명') : '<p class="muted">서명 대기</p>'}${wt ? `<p class="muted">서명 시각 ${kst(wt)}</p>` : ''}</section>
+<section><h2>사업주</h2><p>${esc(t.businessName)}<br>${esc(t.ownerName)} / ${esc(phone(t.ownerPhone))}</p>${ownerStrokes ? strokesToSvg(ownerStrokes, '사업주 서명') : '<p class="muted">서명 대기</p>'}${ot ? `<p class="muted">서명 시각 ${kst(ot)}</p>` : ''}</section>
+<section><h2>근로자</h2><p>${esc(t.workerName)} / ${esc(phone(t.workerPhone))}</p>${workerStrokes ? strokesToSvg(workerStrokes, '근로자 서명') : '<p class="muted">서명 대기</p>'}${wt ? `<p class="muted">서명 시각 ${kst(wt)}</p>` : ''}</section>
 </div>
 ${id ? `<p class="muted">문서 ID: ${esc(id)}</p>` : ''}
 ${hash ? `<p class="muted break">계약 지문(SHA-256): ${esc(hash)}<br>계약 내용과 양측 서명으로 계산한 값입니다. 파일 변조 확인용이며 본인인증이 아닙니다. 서명 시각은 각자 기기의 시계 기준입니다.</p>` : ''}
