@@ -48,3 +48,14 @@ textarea.link{font-size:12px;height:96px;word-break:break-all;resize:none}
 svg.sig{display:block;width:100%;max-width:230px;height:auto;border-bottom:1px solid #ccd}
 @media (max-width:480px){.signatures{flex-direction:column;gap:8px}.paper{padding:16px 14px}}
 @media print{.top,footer,.noprint,#toast{display:none!important}body{background:#fff}.paper{border:0;padding:0}.wrap{max-width:none;padding:0}}
+/* 조항·서명 블록은 쪽이 나뉠 때 중간에서 잘리지 않게 */
+.clause{break-inside:avoid;page-break-inside:avoid}
+/* PDF 전용: 화면 크기와 무관하게 A4 본문 폭(약 186mm)에 고정 */
+.paper.pdf{width:700px;box-sizing:border-box;border:0;border-radius:0;padding:0;font-size:12.5px;line-height:1.65;background:#fff}
+.paper.pdf h1{font-size:22px;text-align:center;border-bottom:2px solid #172238;margin:0 0 12px}
+.paper.pdf h2{font-size:13.5px;margin:12px 0 3px}
+.paper.pdf .signatures{display:flex;flex-direction:row;gap:16px;margin-top:16px;break-inside:avoid}
+.paper.pdf .signatures section{flex:1;border:1px solid #172238;border-radius:4px;padding:8px 12px;min-height:150px}
+.paper.pdf .signatures h2{margin-top:0}
+.paper.pdf img.sigimg{display:block;width:220px;height:77px;border-bottom:1px solid #99a;margin-top:6px}
+.signblock{break-inside:avoid;page-break-inside:avoid}

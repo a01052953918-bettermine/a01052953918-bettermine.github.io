@@ -2,7 +2,7 @@ import { DAYS, DAY_LABELS, MIN_WAGE_2026, calculate, baseWageFromIncluded, valid
 import { encodeLink, decodeLink, packStrokes, simplifyStrokes, checkPackedStrokes, fingerprint, SIG_W, SIG_H, hasInk } from './share.js';
 import { renderDocument, esc, won, kst } from './doc.js';
 
-const APP_VERSION = '2.1.1';
+const APP_VERSION = '2.1.2';
 const KEY = 'signpass.contracts.v1';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -249,9 +249,37 @@ ${local ? '' : '<p class="muted small">이 계약서는 링크에 담긴 내용 
 
 // ---------- 화면: 완료 ----------
 const safeName = r => `${r.terms.workerName}_근로계약서_${r.terms.businessName}`.replace(/[\\/:*?"<>|\s]+/g, '_');
-function pdfJob(rec) {
-  return window.html2pdf().set({ margin: [10, 10, 10, 10], filename: safeName(rec) + '.pdf', image: { type: 'jpeg', quality: 0.95 },
-    html2canvas: { scale: 2, backgroundColor: '#ffffff' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css', 'legacy'] } }).from($('#doc'));
+// 화면 크기와 무관한 고정 폭 복제본으로 PDF를 만든다. 서명 SVG는 PNG로 바꿔 넣는다(html2canvas가 SVG 높이를 못 잡는 문제).
+async function svgToPng(svg) {
+  const x = svg.cloneNode(true); x.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); x.setAttribute('width', 500); x.setAttribute('height', 175);
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(x)], { type: 'image/svg+xml' }));
+  try {
+    const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
+    const c = document.createElement('canvas'); c.width = 1000; c.height = 350; const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, 1000, 350); g.drawImage(img, 0, 0, 1000, 350);
+    return c.toDataURL('image/png');
+  } finally { URL.revokeObjectURL(url); }
+}
+async function pdfRun(rec, finish) {
+  const host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff';
+  const clone = $('#doc').cloneNode(true); clone.removeAttribute('id'); clone.classList.add('pdf');
+  for (const svg of clone.querySelectorAll('svg.sig')) {
+    const img = document.createElement('img'); img.className = 'sigimg'; img.alt = svg.getAttribute('aria-label') || '서명'; img.src = await svgToPng(svg); svg.replaceWith(img);
+  }
+  host.appendChild(clone); document.body.appendChild(host);
+  try {
+    await Promise.all([...clone.querySelectorAll('img')].map(i => i.decode ? i.decode() : null));
+    const w = window.html2pdf().set({ margin: [14, 12, 14, 12], filename: safeName(rec) + '.pdf', image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, backgroundColor: '#ffffff', windowWidth: 700 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['.clause', '.signblock'] } }).from(clone).toPdf();
+    // 모든 쪽에 테두리와 쪽 번호
+    await w.get('pdf').then(pdf => {
+      const n = pdf.internal.getNumberOfPages();
+      for (let p = 1; p <= n; p++) { pdf.setPage(p); pdf.setDrawColor(23, 34, 56); pdf.setLineWidth(0.4); pdf.rect(7, 7, 196, 283); pdf.setFontSize(8); pdf.setTextColor(100); pdf.text(p + ' / ' + n, 105, 294, { align: 'center' }); }
+    });
+    return await finish(w);
+  } finally { host.remove(); }
 }
 async function renderDone(rec, who) {
   const v = await verifyDone({ k: 'done', ...rec });
@@ -270,14 +298,14 @@ ${toOwner ? '<p class="warn">사장님이 이 계약을 보관함에 저장하�
   $('#pdf').onclick = async () => {
     if (!window.html2pdf) { toast('PDF 도구를 불러오지 못해 인쇄 화면을 엽니다. "PDF로 저장"을 선택하세요.'); window.print(); return; }
     toast('PDF를 만드는 중입니다…');
-    try { await pdfJob(rec).save(); toast('PDF를 저장했습니다.'); } catch { toast('PDF 생성에 실패해 인쇄 화면을 엽니다.'); window.print(); }
+    try { await pdfRun(rec, w => w.save()); toast('PDF를 저장했습니다.'); } catch { toast('PDF 생성에 실패해 인쇄 화면을 엽니다.'); window.print(); }
   };
   $('#copyDone').onclick = () => copyText(link, '서명 완료본 링크를 복사했습니다.');
   $('#sendDone').onclick = async () => {
     const text = `[${rec.terms.businessName}] 근로계약서 서명 완료본입니다. 링크를 열면 내용 확인과 보관함 저장이 됩니다.`;
     try {
       if (window.html2pdf && navigator.canShare) {
-        const blob = await pdfJob(rec).outputPdf('blob'), file = new File([blob], safeName(rec) + '.pdf', { type: 'application/pdf' });
+        const blob = await pdfRun(rec, w => w.outputPdf('blob')), file = new File([blob], safeName(rec) + '.pdf', { type: 'application/pdf' });
         if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: '근로계약서 서명 완료본', text: text + '\n' + link }); return; }
       }
       if (navigator.share) await navigator.share({ title: '근로계약서 서명 완료본', text, url: link });
